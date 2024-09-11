@@ -1,0 +1,17 @@
+services:
+  mongo:
+    image: mongo:latest
+    container_name: pug-mobile-mongo-database
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=password
+      - MONGO_INITDB_DATABASE=pug
+    volumes:
+      - mongo-data:/data/db
+      - ./mongo.conf:/etc/mongod.conf
+    command: mongod --config /etc/mongod.conf
+
+volumes:
+  mongo-data:
