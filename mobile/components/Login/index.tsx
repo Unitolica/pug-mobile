@@ -5,7 +5,6 @@ import {
   View,
   Text,
   Image,
-  Modal,
   Pressable,
   Alert,
   TouchableWithoutFeedback,
@@ -38,7 +37,7 @@ export function Login() {
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'position' : 'padding'}
+        behavior={Platform.OS === 'ios' ? 'height' : 'padding'}
         style={{ flex: 1 }}
       >
         <ScrollView contentContainerStyle={styles.loginView}>
@@ -48,6 +47,11 @@ export function Login() {
                 source={require("@/assets/images/students.png")}
                 style={styles.students}
               />
+            </View>
+
+            <View style={styles.welcomeWrapper}>
+              <Text style={styles.welcomeText}>Bem-vindo!</Text>
+              <Text style={styles.loginText}>Faça seu login abaixo</Text>
             </View>
 
             <Controller
@@ -62,7 +66,13 @@ export function Login() {
                 />
               )}
               name="email"
-              rules={{ required: "Voce precisa inserir um email", pattern: { value: /^\S+@\S+$/i, message: "Insira um email valido com o dominio da catolica (@catolicasc.edu.br)" } }}
+              rules={{
+                required: "Voce precisa inserir um email",
+                pattern: {
+                  value: /^(?!.*@(?!(catolicasc\.edu\.br))).*$/i,
+                  message: "Insira um nome de usuario ou email com dominio valido (@catolicasc.edu.br)"
+                }
+              }}
             />
             {errors.email && <Text style={styles.errorText}>{errors.email.message as string}</Text>}
 
@@ -104,11 +114,6 @@ export function Login() {
   )
 }
 
-const stylesAlertModal = StyleSheet.create({
-  container: {
-  }
-})
-
 const styles = StyleSheet.create({
   loginView: {
     flexGrow: 1
@@ -122,8 +127,21 @@ const styles = StyleSheet.create({
   },
   students: {
     maxWidth: "100%",
-    height: Platform.OS === "android" ? 400 : 500,
+    height: Platform.OS === "android" ? 300 : 400,
     objectFit: "contain",
+  },
+  welcomeWrapper: {
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 25,
+  },
+  welcomeText: {
+    fontSize: Platform.OS === "android" ? 24 : 32,
+    fontWeight: "bold",
+  },
+  loginText: {
+    fontSize: Platform.OS === "android" ? 14 : 20,
+    fontWeight: "bold",
   },
   input: {
     height: Platform.OS === "android" ? 25 : 40,
@@ -150,7 +168,7 @@ const styles = StyleSheet.create({
     fontSize: Platform.OS === "android" ? 14 : 18,
   },
   loginButton: {
-    marginTop: 10,
+    marginTop: 30,
     backgroundColor: Colors.light.primary,
     borderRadius: 50,
     height: 40,

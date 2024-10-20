@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { StyleSheet, View, Pressable, Text, Platform, ActionSheetIOS } from "react-native";
+import { StyleSheet, View, Pressable, Text, Platform, ActionSheetIOS, Alert } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Colors } from "@/constants/Colors";
 import { AnimatedCircularProgress } from "react-native-circular-progress";
@@ -103,7 +103,7 @@ export default function HomeScreen() {
       <View style={styles.doneWrapper}>
         <AnimatedCircularProgress
           size={Platform.OS === "android" ? 200 : 250}
-          width={30}
+          width={Platform.OS === "android" ? 25 : 35}
           fill={donePercentage}
           tintColor={Colors.light.primary}
           backgroundColor={Colors.light.gray}
@@ -118,6 +118,14 @@ export default function HomeScreen() {
                 <Text style={styles.doneTextContent}>
                   Mensais
                 </Text>
+                <Pressable
+                  onPress={() => {
+                    Alert.alert("Informações", "Você deve completar 20 horas mensais!")
+                  }}
+                  style={styles.doneTextWrapperInfo}
+                >
+                  <Ionicons size={20} name="information-circle" color={Colors.light.gray} />
+                </Pressable>
               </View>
             )
           }
@@ -234,6 +242,12 @@ const styles = StyleSheet.create({
   doneWrapper: {
     marginTop: Platform.OS === "android" ? 0 : 40,
     padding: 10,
+  },
+  doneTextWrapperText: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  doneTextWrapperInfo: {
   },
   doneTextWrapper: {
     justifyContent: "center",
