@@ -1,0 +1,126 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String               @id @default(uuid())
+  email              String               @unique
+  name               String?
+  password           String
+  role               Role                 @default(STUDENT)
+  university         University[]
+  course             Course[]
+  project            Project[]
+  universityId       String?
+  requestedTimeLogs  TimeLog[]            @relation("requestedBy")
+  approvedTimeLogs   TimeLog[]            @relation("approvedBy")
+  deniedTimeLogs     TimeLog[]            @relation("deniedBy")
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  UserOnCourses      UserOnCourses[]
+  UserOnUniversities UserOnUniversities[]
+
+  @@map("users")
+}
+
+enum Role {
+  STUDENT
+  PROFESSOR
+  ENTITY
+  ADMIN
+}
+
+model University {
+  id                 String                  @id @default(uuid())
+  name               String?
+  users              User[]
+  courses            UniversitiesOnCourses[]
+  projects           Project[]
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+  UserOnUniversities UserOnUniversities[]
+
+  @@map("universities")
+}
+
+model UserOnUniversities {
+  university   University @relation(fields: [universityId], references: [id])
+  universityId String
+  user         User       @relation(fields: [userId], references: [id])
+  userId       String
+
+  @@id([universityId, userId])
+}
+
+model Course {
+  id            String                  @id @default(uuid())
+  name          String?
+  users         User[]
+  universities  UniversitiesOnCourses[]
+  projects      Project[]
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+  UserOnCourses UserOnCourses[]
+
+  @@map("courses")
+}
+
+model UniversitiesOnCourses {
+  course       Course     @relation(fields: [courseId], references: [id])
+  courseId     String
+  university   University @relation(fields: [universityId], references: [id])
+  universityId String
+
+  @@id([courseId, universityId])
+}
+
+model UserOnCourses {
+  course   Course @relation(fields: [courseId], references: [id])
+  courseId String
+  user     User   @relation(fields: [userId], references: [id])
+  userId   String
+
+  @@id([courseId, userId])
+}
+
+model Project {
+  id           String       @id @default(uuid())
+  name         String?
+  description  String?
+  courses      Course[]
+  universities University[]
+  users        User[]
+  timeLog      TimeLog[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@map("projects")
+}
+
+model TimeLog {
+  id            String   @id @default(uuid())
+  description   String?
+  requestedBy   User?    @relation("requestedBy", fields: [requestedById], references: [id])
+  approvedBy    User?    @relation("approvedBy", fields: [approvedById], references: [id])
+  deniedBy      User?    @relation("deniedBy", fields: [deniedById], references: [id])
+  project       Project? @relation(fields: [projectId], references: [id])
+  projectId     String?
+  requestedById String?
+  approvedById  String?
+  deniedById    String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("timeLogs")
+}
