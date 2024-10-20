@@ -1,102 +1,116 @@
+import { useState } from "react";
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { StyleSheet, Image, Platform } from 'react-native';
+import { View, StyleSheet, TextInput, Text, ScrollView, Platform } from 'react-native';
+import { Colors } from "@/constants/Colors";
 
-import { Collapsible } from '@/components/Collapsible';
-import { ExternalLink } from '@/components/ExternalLink';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+const projects = [
+  {
+    title: "Projeto 1",
+    description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam nec purus nec eros ultricies tincidunt. Nullam nec purus nec eros ultricies tincidunt.",
+    hours: 10
+  },
+  {
+    title: "Projeto 2",
+    description: "Descrição do projeto 2",
+    hours: 20
+  },
+  {
+    title: "Projeto 3",
+    description: "Descrição do projeto 3",
+    hours: 30
+  },
+  {
+    title: "Projeto 4",
+    description: "Descrição do projeto 4",
+    hours: 40
+  },
+  {
+    title: "Projeto 5",
+    description: "Descrição do projeto 5",
+    hours: 50
+  },
+  {
+    title: "Projeto 6",
+    description: "Descrição do projeto 6",
+    hours: 60
+  },
+]
 
 export default function TabTwoScreen() {
+  const [search, setSearch] = useState("");
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-      headerImage={<Ionicons size={310} name="code-slash" style={styles.headerImage} />}>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Explore</ThemedText>
-      </ThemedView>
-      <ThemedText>This app includes example code to help you get started.</ThemedText>
-      <Collapsible title="File-based routing">
-        <ThemedText>
-          This app has two screens:{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/explore.tsx</ThemedText>
-        </ThemedText>
-        <ThemedText>
-          The layout file in <ThemedText type="defaultSemiBold">app/(tabs)/_layout.tsx</ThemedText>{' '}
-          sets up the tab navigator.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/router/introduction">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Android, iOS, and web support">
-        <ThemedText>
-          You can open this project on Android, iOS, and the web. To open the web version, press{' '}
-          <ThemedText type="defaultSemiBold">w</ThemedText> in the terminal running this project.
-        </ThemedText>
-      </Collapsible>
-      <Collapsible title="Images">
-        <ThemedText>
-          For static images, you can use the <ThemedText type="defaultSemiBold">@2x</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">@3x</ThemedText> suffixes to provide files for
-          different screen densities
-        </ThemedText>
-        <Image source={require('@/assets/images/react-logo.png')} style={{ alignSelf: 'center' }} />
-        <ExternalLink href="https://reactnative.dev/docs/images">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Custom fonts">
-        <ThemedText>
-          Open <ThemedText type="defaultSemiBold">app/_layout.tsx</ThemedText> to see how to load{' '}
-          <ThemedText style={{ fontFamily: 'SpaceMono' }}>
-            custom fonts such as this one.
-          </ThemedText>
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/versions/latest/sdk/font">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Light and dark mode components">
-        <ThemedText>
-          This template has light and dark mode support. The{' '}
-          <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook lets you inspect
-          what the user's current color scheme is, and so you can adjust UI colors accordingly.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Animations">
-        <ThemedText>
-          This template includes an example of an animated component. The{' '}
-          <ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> component uses
-          the powerful <ThemedText type="defaultSemiBold">react-native-reanimated</ThemedText> library
-          to create a waving hand animation.
-        </ThemedText>
-        {Platform.select({
-          ios: (
-            <ThemedText>
-              The <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
-              component provides a parallax effect for the header image.
-            </ThemedText>
-          ),
-        })}
-      </Collapsible>
-    </ParallaxScrollView>
+    <View style={styles.viewContainer}>
+      <View style={styles.headerContainer}>
+        <TextInput
+          style={styles.searchInput}
+          value={search}
+          onChangeText={setSearch}
+          placeholder="Procurar projetos"
+        />
+        <Ionicons name="search" size={24} color="black" />
+      </View>
+
+      <ScrollView style={styles.content}>
+        {projects.map((project, index) => (
+          <ProjectCard key={index} {...project} />
+        ))}
+      </ScrollView>
+    </View>
   );
 }
 
+type ProjectCartProps = {
+  title: string
+  description: string
+  hours: number
+}
+
+function ProjectCard({ title, description, hours }: ProjectCartProps) {
+  return (
+    <View style={projectStyles.container}>
+      <Text style={projectStyles.text}>{title}</Text>
+      <Text style={projectStyles.text}>{description}</Text>
+      <Text style={projectStyles.text}>Hotas totais: {hours}</Text>
+    </View>
+  )
+}
+const projectStyles = StyleSheet.create({
+  container: {
+    marginVertical: 8,
+    padding: 10,
+    backgroundColor: Colors.light.primary,
+    color: "white",
+    borderRadius: 10
+  },
+  text: {
+    color: "white"
+  }
+})
+
 const styles = StyleSheet.create({
-  headerImage: {
-    color: '#808080',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
+  viewContainer: {
+    paddingTop: Platform.OS === "android" ? 30 : 50,
+    flex: 1,
+    alignItems: "center"
   },
-  titleContainer: {
-    flexDirection: 'row',
-    gap: 8,
+  headerContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
+    padding: 16,
   },
+  searchInput: {
+    width: "90%",
+    height: 40,
+    fontSize: Platform.OS === "android" ? 14 : 18,
+    borderBottomWidth: 1,
+  },
+  content: {
+    flex: 1,
+    width: "100%",
+    maxHeight: "90%",
+    paddingHorizontal: 16,
+  }
 });
