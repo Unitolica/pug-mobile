@@ -1,34 +1,53 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
+import { Tabs } from "expo-router";
+import React from "react";
 
-import { TabBarIcon } from '@/components/navigation/TabBarIcon';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { TabBarIcon } from "@/components/navigation/TabBarIcon";
+import { Colors } from "@/constants/Colors";
+import { useAuth } from "@/context/auth";
+import { Login } from "@/components/Login";
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  const { isLoggedIn } = useAuth();
+
+  if (!isLoggedIn) {
+    return <Login />
+  }
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: "white",
+        tabBarInactiveTintColor: "white",
         headerShown: false,
+        tabBarShowLabel: false,
+        tabBarHideOnKeyboard: true,
+        tabBarStyle: {
+          backgroundColor: Colors.light.primary
+        }
       }}>
       <Tabs.Screen
-        name="index"
+        name="explore"
         options={{
-          title: 'Home',
           tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? 'home' : 'home-outline'} color={color} />
+            <TabBarIcon name={focused ? "search" : "search-outline"} color={color} />
           ),
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="index"
         options={{
-          title: 'Explore',
+          title: "Home",
           tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? 'code-slash' : 'code-slash-outline'} color={color} />
+            <TabBarIcon name={focused ? "home" : "home-outline"} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: "Configuracoes",
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon name={focused ? "person" : "person-outline"} color={color} />
           ),
         }}
       />

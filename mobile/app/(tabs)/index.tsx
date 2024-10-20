@@ -1,70 +1,222 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import { useEffect, useState } from 'react';
+import { StyleSheet, View, Pressable, Text, Platform } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { Colors } from '@/constants/Colors';
+import { AnimatedCircularProgress } from 'react-native-circular-progress';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+const hourInTimestamp = 60 * 60 * 1000
+const hoursRegisters = [
+  {
+    init: new Date(Date.now()),
+    end: new Date(Date.now() + (2 * hourInTimestamp)),
+    responsible: "João"
+  },
+  {
+    init: new Date(Date.now()),
+    end: new Date(Date.now() + (0.5 * hourInTimestamp)),
+    responsible: "Maria"
+  },
+  {
+    init: new Date(Date.now()),
+    end: new Date(Date.now() + (4 * hourInTimestamp)),
+    responsible: "José"
+  },
+]
 
 export default function HomeScreen() {
+  const [donePercentage, setDonePercentage] = useState(0);
+  const [lastsHoursRegisters, setLastsHoursRegisters] = useState([])
+
+  async function openFullHistory () {
+    console.log("Historico completo")
+  }
+
+  useEffect(() => {
+    const percentage = (8 / 20) * 100
+    const lastsHoursRegisters = hoursRegisters.slice(0, 3)
+
+    setDonePercentage(percentage)
+    setLastsHoursRegisters(lastsHoursRegisters as any)
+  }, []);
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({ ios: 'cmd + d', android: 'cmd + m' })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <View style={styles.viewContainer}>
+      <View style={styles.projectSelectorWrapper}>
+        <Text style={styles.projectSelectorText}>Projeto 1 <Ionicons name="chevron-down" color={Colors.light.icon} /></Text>
+      </View>
+
+      <View style={styles.projectSelectorWrapper}>
+        <AnimatedCircularProgress
+          size={Platform.OS === "android" ? 200 : 250}
+          width={30}
+          fill={donePercentage}
+          tintColor={Colors.light.primary}
+          backgroundColor={Colors.light.gray}
+          rotation={0}
+        >
+          {
+            () => (
+              <View style={styles.doneTextWrapper}>
+                <Text style={styles.doneTextContent}>
+                  8/20h
+                </Text>
+                <Text style={styles.doneTextContent}>
+                  Mensais
+                </Text>
+              </View>
+            )
+          }
+        </AnimatedCircularProgress>
+      </View>
+
+      <View style={styles.addHoursWrapper}>
+        <Text style={styles.addHoursText}>
+          Adicionar horas
+        </Text>
+        <Pressable style={styles.addHoursButton}>
+          <Ionicons name="add" size={30} color="white" />
+        </Pressable>
+      </View>
+
+      <View style={styles.lastsHistoryWrapper}>
+        {
+          hoursRegisters.map((hourRegister, index) => (
+            <HourRegister key={index} {...hourRegister} />
+          ))
+        }
+
+        <Pressable style={styles.openFullHistoryButton} onPress={openFullHistory}>
+          <Text style={styles.openFullHistoryText}>
+            Mostrar historico completo
+            <Ionicons name="chevron-forward" size={10} color="white" />
+          </Text>
+        </Pressable>
+      </View>
+    </View>
   );
 }
 
+type HourRegisterProps = {
+  init: Date
+  end: Date
+  responsible: string
+}
+function HourRegister ({ init, end, responsible} : HourRegisterProps) {
+  const timeSpent = (end.getTime() - init.getTime()) / 1000 / 60 / 60
+  const styles = StyleSheet.create({
+    hoursRegisterWrapper: {
+      flexDirection: "row",
+      justifyContent: "space-around",
+      alignItems: "center",
+      padding: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: "black",
+    },
+    hoursRegisterText: {
+      textAlign: "center",
+      width: "33%",
+    },
+    hoursRegisterTextWithBorder: {
+      textAlign: "center",
+      width: "33%",
+      borderStartWidth: 1,
+      borderEndWidth: 1,
+      borderRightWidth: 1,
+      borderLeftWidth: 1,
+    },
+  })
+
+  return (
+    <View style={styles.hoursRegisterWrapper}>
+      <Text style={styles.hoursRegisterText}>
+        {init.toLocaleDateString()}
+      </Text>
+
+      <Text style={styles.hoursRegisterTextWithBorder}>
+        {responsible}
+      </Text>
+
+      <Text style={styles.hoursRegisterText}>
+        {timeSpent} horas
+      </Text>
+    </View>
+  )
+}
+
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  viewContainer: {
+    paddingTop: Platform.OS === "android" ? 30 : 50,
+    flex: 1,
+    alignItems: "center"
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  headerContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
+    padding: 16,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  searchInput: {
+    width: "90%",
+    borderBottomWidth: 1,
+  },
+  content: {
+    flex: 1,
+    width: "100%",
+    maxHeight: "90%",
+    paddingHorizontal: 16,
+  },
+  projectSelectorWrapper: {
+    padding: 10,
+  },
+  projectSelectorText: {
+    fontSize: Platform.OS === "android" ? 16 : 24,
+    fontWeight: "bold",
+    marginVertical: 5,
+  },
+  doneTextWrapper: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  doneTextContent: {
+    fontSize: 24,
+    fontWeight: "bold",
+  },
+  addHoursWrapper: {
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
+    padding: 10,
+  },
+  addHoursText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginVertical: 5,
+  },
+  addHoursButton: {
+    backgroundColor: Colors.light.primary,
+    padding: 8,
+    borderRadius: 50,
+  },
+  lastsHistoryWrapper: {
+    padding: 10,
+    backgroundColor: Colors.light.gray,
+    borderRadius: 10,
+    width: "90%",
+  },
+  openFullHistoryButton: {
+    marginTop: 10,
+    marginHorizontal: "auto",
+    padding: 10,
+    borderRadius: 50,
+    backgroundColor: Colors.light.primary,
+  },
+  openFullHistoryText: {
+    color: "white",
+    fontSize: 14,
+    paddingHorizontal: 5,
+    justifyContent: "center",
+    alignItems: "center",
+    flexDirection: "column",
   },
 });
