@@ -12,7 +12,7 @@ type AuthProviderProps = {
   children: React.ReactNode;
 };
 export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   async function login (email: string, password: string) {
     try {
