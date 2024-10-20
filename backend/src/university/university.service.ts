@@ -14,7 +14,7 @@ export class UniversityService {
       })
       return { response, message: "Created" };
     } catch (error) {
-      throw {  statusCode: 500, message: 'Internal Server Error' }
+      throw {  statusCode: 500, message: 'Erro ao criar Universidade!' }
     }
   }
 
@@ -28,7 +28,7 @@ export class UniversityService {
       });
       return { message: "Course Added" };
     } catch (error) {
-      throw {  statusCode: 500, message: 'Internal Server Error' }
+      throw {  statusCode: 500, message: 'Erro ao adicionar curso!' }
     }
   }
 
@@ -63,7 +63,7 @@ export class UniversityService {
   }
 
   async remove(id: string) {
-    const response = this.prisma.university.delete({
+    const response = await this.prisma.university.delete({
       where: { id },
     });
     return { message: "Deleted" };

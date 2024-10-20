@@ -13,15 +13,15 @@ export class AuthService {
 
     async validateUser(email: string, password: string, ): Promise<{ access_token: string }> {
         const user = await this.userService.findByEmail(email);
-
+        
         if (!user) {
-            throw { statusCode: 404, message: 'Not Found' };
+            throw { statusCode: 404, message: 'Usuário não encontrado!' };
         }
 
         const validatePassword = await this.crypt.compare(password, user.password);
 
         if (!validatePassword) {
-            throw new UnauthorizedException();
+            throw { statusCode: 404, message: 'Senha errada para usuário!' };
         }
 
         return this.getToken(user.id, user.email);

@@ -93,7 +93,7 @@ export class CoursesService {
   }
 
   async remove(id: string) {
-    const response = this.prisma.course.delete({
+    const response = await this.prisma.course.delete({
       where: { id },
     });
     return { message: "Deleted" };

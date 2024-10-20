@@ -9,8 +9,8 @@ import { Response } from 'express';
 export class AuthController {
     constructor( private authService: AuthService) {}
 
-    @Public()
     @HttpCode(202)
+    @Public()
     @Post()
     async validateUser(@Body() verifyUserDto: VerifyUserDto, @Res({ passthrough: true }) response: Response) {
         const { access_token } = await this.authService.validateUser(verifyUserDto.email, verifyUserDto.password)

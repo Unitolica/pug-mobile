@@ -26,12 +26,34 @@ export class UserService {
       if (universityErrors.length > 0) {
         throw { statusCode: 500, internalCode: 2, message: errors[2], errors: universityErrors }
       }
+      const coursesErrors = [];
+    createUserDto.courses.forEach(async (courseId) => {
+      try{
+        const validCourse = await this.prisma.universitiesOnCourses.findFirst({
+          where: { 
+            courseId: courseId,
+            universityId: { 
+              in: createUserDto.universities
+            }
+          }
+        });
+        if (!validCourse) {
+          throw { statusCode: 400, internalCode: 1, message: errors[1], courseId }
+        }
+        await this.addCourse(courseId, response.id);
+      } catch (error) {
+        coursesErrors.push({error, courseId});
+      }
+    });
+    if (coursesErrors.length > 0) {
+      throw { statusCode: 500, internalCode: 1, message: errors[1], errors: coursesErrors }
+    }
       return { response, message: "Created" };
     } catch (error) {
       if (error.code === 'P2002'){
         throw {  statusCode: 409, internalCode: 0, message: errors[0] }
       }
-      throw {  statusCode: 500, message: 'Internal Server Error' }
+      throw {  statusCode: 500, error }
     }
   }
 
@@ -62,7 +84,7 @@ export class UserService {
           userId
         }
       });
-      return { message: "University Added" };
+      return { message: "Course Added" };
     } catch (error) {
       throw {  statusCode: 500, message: 'Internal Server Error' }
     }
@@ -79,10 +101,6 @@ export class UserService {
         id, 
       },
     });
-
-    if (!response) {
-      throw { statusCode: 404 , message: "Not Found"}
-    }
 
     return response;
   }
@@ -102,12 +120,13 @@ export class UserService {
     updateUserDto.password = await this.crypt.encrypt(updateUserDto.password);
     }
     try{
-    const response = this.prisma.user.update({
+    const response = await this.prisma.user.update({
       where: { id },
-      data: updateUserDto,
+      data: this.updateUserDto(updateUserDto),
     });
+
     const universityErrors = [];
-    this.prisma.userOnUniversities.deleteMany({ where: { userId: id } });
+    await this.prisma.userOnUniversities.deleteMany({ where: { userId: id } });
     updateUserDto.universities.forEach(async (universityId) => {
       try{
         await this.addUniversity(universityId, id);
@@ -118,25 +137,44 @@ export class UserService {
     if (universityErrors.length > 0) {
       throw { statusCode: 500, internalCode: 2, message: errors[2], errors: universityErrors }
     }
+
     const coursesErrors = [];
-    this.prisma.userOnCourses.deleteMany({ where: { userId: id } });
+    await this.prisma.userOnCourses.deleteMany({ where: { userId: id } });
     updateUserDto.courses.forEach(async (courseId) => {
       try{
+        const validCourse = await this.prisma.universitiesOnCourses.findFirst({
+          where: { 
+            courseId: courseId,
+            universityId: { 
+              in: updateUserDto.universities
+            }
+          }
+        });
+        if (!validCourse) {
+          throw { statusCode: 400, internalCode: 1, message: errors[1], courseId }
+        }
         await this.addCourse(courseId, id);
       } catch (error) {
-        coursesErrors.push(courseId);
+        coursesErrors.push({error, courseId});
       }
     });
     if (coursesErrors.length > 0) {
       throw { statusCode: 500, internalCode: 1, message: errors[1], errors: coursesErrors }
     }
+    
     return { response, message: "Updated" };
     } catch (error) {
       if (error.code === 'P2002'){
         throw {  statusCode: 409, internalCode: 0, message: errors[0] }
       }
-      throw {  statusCode: 500, message: 'Internal Server Error' }
+      
+      throw {  statusCode: 500, message: "Não foi possível Atualizar o usuário!" };
     }
+  }
+
+  updateUserDto(updateUserDto: UpdateUserDto){
+    const { universities, courses, ...user } = updateUserDto;
+    return user;
   }
 
   async remove(id: string) {
@@ -144,5 +182,15 @@ export class UserService {
       where: { id },
     });
     return { message: "Deleted" };
+  }
+
+  async userCourses(id: string) {
+    const response = await this.prisma.userOnCourses.findMany({
+      where: { userId: id },
+      include: {
+        course: true
+      }
+    });
+    return response;
   }
 }
