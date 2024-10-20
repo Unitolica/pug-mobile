@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
-import { StyleSheet, View, Pressable, Text, Platform } from 'react-native';
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { Colors } from '@/constants/Colors';
-import { AnimatedCircularProgress } from 'react-native-circular-progress';
+import { useEffect, useState } from "react";
+import { StyleSheet, View, Pressable, Text, Platform, ActionSheetIOS } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { Colors } from "@/constants/Colors";
+import { AnimatedCircularProgress } from "react-native-circular-progress";
+import { Picker } from "@react-native-picker/picker";
 
 const hourInTimestamp = 60 * 60 * 1000
 const hoursRegisters = [
@@ -13,7 +14,7 @@ const hoursRegisters = [
   },
   {
     init: new Date(Date.now()),
-    end: new Date(Date.now() + (0.5 * hourInTimestamp)),
+    end: new Date(Date.now() + (1.5 * hourInTimestamp)),
     responsible: "Maria"
   },
   {
@@ -23,13 +24,43 @@ const hoursRegisters = [
   },
 ]
 
+const usersProjects = [
+  {
+    id: "project1",
+    title: "Projeto 1",
+    description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam nec purus nec eros}"
+  },
+  {
+    id: "project2",
+    title: "Projeto 2",
+    description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam nec purus nec eros}"
+  },
+]
+
 export default function HomeScreen() {
   const [donePercentage, setDonePercentage] = useState(0);
   const [lastsHoursRegisters, setLastsHoursRegisters] = useState([])
 
-  async function openFullHistory () {
+  const [selectedProject, setSelectedProject] = useState("project1");
+
+  async function openFullHistory() {
     console.log("Historico completo")
   }
+
+  function openIOSPicker() {
+    const labels = usersProjects.map(option => option.title);
+    ActionSheetIOS.showActionSheetWithOptions(
+      {
+        options: [...labels, "Cancelar"],
+        cancelButtonIndex: labels.length,
+      },
+      (buttonIndex) => {
+        if (buttonIndex !== labels.length) {
+          setSelectedProject(usersProjects[buttonIndex].id);
+        }
+      }
+    );
+  };
 
   useEffect(() => {
     const percentage = (8 / 20) * 100
@@ -41,11 +72,35 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.viewContainer}>
-      <View style={styles.projectSelectorWrapper}>
-        <Text style={styles.projectSelectorText}>Projeto 1 <Ionicons name="chevron-down" color={Colors.light.icon} /></Text>
-      </View>
+      {Platform.OS === "ios" && (
+        <Pressable
+          onPress={openIOSPicker}
+        >
+          <View style={styles.projectSelectorWrapper}>
+            <Text style={styles.projectSelectorText}>Projeto 1 <Ionicons name="chevron-down" color={Colors.light.icon} /></Text>
+          </View>
+        </Pressable>
+      )}
 
-      <View style={styles.projectSelectorWrapper}>
+      {Platform.OS === "android" && (
+        <Picker
+          selectedValue={selectedProject}
+          onValueChange={(itemValue) => {
+            setSelectedProject(itemValue);
+          }}
+          style={{
+            width: 150,
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          {usersProjects.map((option) => (
+            <Picker.Item key={option.id} label={option.title} value={option.id} />
+          ))}
+        </Picker>
+      )}
+
+      <View style={styles.doneWrapper}>
         <AnimatedCircularProgress
           size={Platform.OS === "android" ? 200 : 250}
           width={30}
@@ -80,7 +135,7 @@ export default function HomeScreen() {
 
       <View style={styles.lastsHistoryWrapper}>
         {
-          hoursRegisters.map((hourRegister, index) => (
+          lastsHoursRegisters.map((hourRegister, index) => (
             <HourRegister key={index} {...hourRegister} />
           ))
         }
@@ -101,7 +156,7 @@ type HourRegisterProps = {
   end: Date
   responsible: string
 }
-function HourRegister ({ init, end, responsible} : HourRegisterProps) {
+function HourRegister({ init, end, responsible }: HourRegisterProps) {
   const timeSpent = (end.getTime() - init.getTime()) / 1000 / 60 / 60
   const styles = StyleSheet.create({
     hoursRegisterWrapper: {
@@ -169,10 +224,16 @@ const styles = StyleSheet.create({
   projectSelectorWrapper: {
     padding: 10,
   },
+  projectSelectorAndroidPicker: {
+  },
   projectSelectorText: {
     fontSize: Platform.OS === "android" ? 16 : 24,
     fontWeight: "bold",
     marginVertical: 5,
+  },
+  doneWrapper: {
+    marginTop: Platform.OS === "android" ? 0 : 40,
+    padding: 10,
   },
   doneTextWrapper: {
     justifyContent: "center",
@@ -183,6 +244,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   addHoursWrapper: {
+    marginTop: Platform.OS === "android" ? 0 : 40,
     justifyContent: "space-between",
     alignItems: "center",
     width: "100%",
@@ -199,6 +261,7 @@ const styles = StyleSheet.create({
     borderRadius: 50,
   },
   lastsHistoryWrapper: {
+    marginTop: Platform.OS === "android" ? 10 : 40,
     padding: 10,
     backgroundColor: Colors.light.gray,
     borderRadius: 10,
