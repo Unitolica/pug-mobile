@@ -95,6 +95,7 @@ CREATE TABLE `UniversitiesOnProjects` (
 CREATE TABLE `timeLogs` (
     `id` VARCHAR(191) NOT NULL,
     `description` VARCHAR(191) NULL,
+    `geolocalization` VARCHAR(191) NULL,
     `projectId` VARCHAR(191) NULL,
     `requestedById` VARCHAR(191) NULL,
     `approvedById` VARCHAR(191) NULL,
