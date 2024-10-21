@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
-import { StyleSheet, View, Pressable, Text, Platform, ActionSheetIOS, Alert } from "react-native";
+import { StyleSheet, View, Pressable, Text, Platform, ActionSheetIOS, Alert, Modal } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Colors } from "@/constants/Colors";
 import { AnimatedCircularProgress } from "react-native-circular-progress";
 import { Picker } from "@react-native-picker/picker";
+import * as Location from "expo-location";
+import { useLocalDatabase } from "@/database/useLocalDatabase";
 
 const hourInTimestamp = 60 * 60 * 1000
 const hoursRegisters = [
@@ -40,8 +42,11 @@ const usersProjects = [
 export default function HomeScreen() {
   const [donePercentage, setDonePercentage] = useState(0);
   const [lastsHoursRegisters, setLastsHoursRegisters] = useState([])
-
   const [selectedProject, setSelectedProject] = useState("project1");
+  const [isAddHoursModalOpen, setIsAddHoursModalOpen] = useState(false)
+  const [currentActionId, setCurrentActionId] = useState<string | null>(null)
+
+  const localDb = useLocalDatabase()
 
   async function openFullHistory() {
     console.log("Historico completo")
@@ -62,12 +67,57 @@ export default function HomeScreen() {
     );
   };
 
-  useEffect(() => {
-    const percentage = (8 / 20) * 100
-    const lastsHoursRegisters = hoursRegisters.slice(0, 3)
+  async function handleInit() {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        throw new Error("Permissão negada")
+      }
 
-    setDonePercentage(percentage)
-    setLastsHoursRegisters(lastsHoursRegisters as any)
+      const location = await Location.getCurrentPositionAsync({
+        mayShowUserSettingsDialog: true,
+      });
+
+      const { id } = await localDb.registerInitAction(selectedProject, location)
+      setCurrentActionId(id)
+      try { getHoursRegisters } catch (_) {}
+    } catch (err) {
+      if (err instanceof Error) {
+        if (err.message === "Permissão negada") {
+          Alert.alert("Permissão negada", "Você deve permitir o acesso a localização para registrar horas")
+        }
+      }
+    }
+  }
+
+  async function getCurrentAction () {
+    try {
+      const currentAction = await localDb.getCurrentAction(selectedProject)
+      console.log("currentAction", currentAction)
+    } catch (err) {
+      console.error("error while getting current action on home screen", err)
+    }
+  }
+
+  async function getHoursRegisters() {
+    const registers = await localDb.getHoursRegisters(selectedProject)
+    console.log("register", registers)
+    // const percentage = (8 / 20) * 100
+    // const lastsHoursRegisters = hoursRegisters.slice(0, 3)
+    //
+    // setDonePercentage(percentage)
+    // setLastsHoursRegisters(lastsHoursRegisters as any)
+  }
+
+  async function fetchInitData() {
+    await getCurrentAction()
+    await getHoursRegisters()
+  }
+
+  useEffect(() => {
+    setTimeout(() => {
+      fetchInitData()
+    }, 4000)
   }, []);
 
   return (
@@ -136,9 +186,29 @@ export default function HomeScreen() {
         <Text style={styles.addHoursText}>
           Adicionar horas
         </Text>
-        <Pressable style={styles.addHoursButton}>
+        <Pressable onPress={() => setIsAddHoursModalOpen(true)} style={styles.addHoursButton}>
           <Ionicons name="add" size={30} color="white" />
         </Pressable>
+        <Modal
+          visible={isAddHoursModalOpen}
+          animationType="slide"
+        >
+          <View style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center"
+          }}
+          >
+            <Text>Adicionar horas</Text>
+            <Pressable onPress={() => setIsAddHoursModalOpen(false)}>
+              <Text>Fechar</Text>
+            </Pressable>
+
+            <Pressable onPress={handleInit}>
+              <Text>Confirmar</Text>
+            </Pressable>
+          </View>
+        </Modal>
       </View>
 
       <View style={styles.lastsHistoryWrapper}>
