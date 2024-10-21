@@ -1,7 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Request, Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { Role } from '../auth/res/roles.enum';
+import { Roles } from '../auth/roles.decorator';
 
 @Controller('user')
 export class UserController {
@@ -13,18 +15,21 @@ export class UserController {
   }
 
   @Get()
+  @Roles(Role.OWNER, Role.PROFESSOR, Role.STUDENT)
   findAll() {
     return this.userService.findAll();
   }
 
   @Get(':id')
+  @Roles(Role.OWNER, Role.PROFESSOR, Role.STUDENT)
   findById(@Param('id') id: string) {
     return this.userService.findById(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.userService.update(id, updateUserDto);
+  @Roles(Role.STUDENT)
+  update(@Request() req, @Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+    return this.userService.update(id, updateUserDto, req.user);
   }
 
   @Delete(':id')

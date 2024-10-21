@@ -2,6 +2,8 @@ import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/commo
 import { UniversityService } from './university.service';
 import { CreateUniversityDto } from './dto/create-university.dto';
 import { UpdateUniversityDto } from './dto/update-university.dto';
+import { Roles } from 'src/auth/roles.decorator';
+import { Role } from 'src/auth/res/roles.enum';
 
 @Controller('university')
 export class UniversityController {
@@ -13,11 +15,13 @@ export class UniversityController {
   }
 
   @Get()
+  @Roles(Role.OWNER, Role.PROFESSOR, Role.STUDENT)
   findAll() {
     return this.universityService.findAll();
   }
 
   @Get(':id')
+  @Roles(Role.OWNER, Role.PROFESSOR, Role.STUDENT)
   findOne(@Param('id') id: string) {
     return this.universityService.findOne(id);
   }

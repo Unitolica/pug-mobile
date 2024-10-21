@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import  errors  from '../../res/consts';
+import { Role } from 'src/auth/res/roles.enum';
 
 @Injectable()
 export class ProjectService {
@@ -148,8 +149,12 @@ export class ProjectService {
     return response;
   }
 
-  async update(id: string, updateProjectDto: UpdateProjectDto) {
-      try{
+  async update(id: string, updateProjectDto: UpdateProjectDto, user: any) {
+    if (user.role == Role.STUDENT && user.id != id) {
+      throw new UnauthorizedException();
+    }
+
+    try {
       const response = await this.prisma.project.update({
         where: { id },
         data: this.updateProjectDto(updateProjectDto),
@@ -157,7 +162,7 @@ export class ProjectService {
       const universityErrors = [];
       await this.prisma.universitiesOnProjects.deleteMany({ where: { projectId: id } });
       updateProjectDto.universities.forEach(async (universityId) => {
-        try{
+        try {
           await this.addUniversity(universityId, id);
         } catch (error) {
           universityErrors.push(universityId);
@@ -169,11 +174,11 @@ export class ProjectService {
       const coursesErrors = [];
       await this.prisma.coursesOnProjects.deleteMany({ where: { projectId: id } });
       updateProjectDto.courses.forEach(async (courseId) => {
-        try{
+        try {
           const validCourse = await this.prisma.universitiesOnCourses.findFirst({
-            where: { 
+            where: {
               courseId: courseId,
-              universityId: { 
+              universityId: {
                 in: updateProjectDto.universities
               }
             }
@@ -183,19 +188,19 @@ export class ProjectService {
           }
           await this.addCourse(courseId, id);
         } catch (error) {
-          coursesErrors.push({error, courseId});
+          coursesErrors.push({ error, courseId });
         }
       });
       if (coursesErrors.length > 0) {
         throw { statusCode: 500, internalCode: 1, message: errors[1], errors: coursesErrors }
       }
       return { response, message: "Updated" };
-      } catch (error) {
-        if (error.code === 'P2002'){
-          throw {  statusCode: 409, internalCode: 0, message: errors[0] }
-        }
-        throw {  statusCode: 500, message: 'Internal Server Error' }
+    } catch (error) {
+      if (error.code === 'P2002') {
+        throw { statusCode: 409, internalCode: 0, message: errors[0] }
       }
+      throw { statusCode: 500, message: 'Internal Server Error' }
+    }
   }
 
   updateProjectDto(updateProjectDto: UpdateProjectDto){

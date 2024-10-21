@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { CryptService } from '../crypt/crypt.service';
 import  errors  from '../../res/consts';
+import { Role } from 'src/auth/res/roles.enum';
 
 @Injectable()
 export class UserService {
@@ -96,6 +97,7 @@ export class UserService {
   }
 
   async findById(id: string) {
+
     const response = await this.prisma.user.findUnique({
       where: { 
         id, 
@@ -115,7 +117,11 @@ export class UserService {
     return response;
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto) {
+  async update(id: string, updateUserDto: UpdateUserDto, user: any) {
+    if (user.role == Role.STUDENT && user.id != id) {
+      throw new UnauthorizedException();
+    }
+
     if (updateUserDto.password){
     updateUserDto.password = await this.crypt.encrypt(updateUserDto.password);
     }

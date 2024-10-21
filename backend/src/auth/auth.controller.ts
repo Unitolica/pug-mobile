@@ -1,9 +1,10 @@
 import { Request, UseGuards, Get, Body, Post, Controller, HttpCode, Res } from '@nestjs/common';
 import { VerifyUserDto } from './dto/verify-user.dto';
 import { AuthService } from './auth.service';
-import { AuthGuard } from './auth.guard';
 import { Public } from './auth.public';
 import { Response } from 'express';
+import { Role } from './res/roles.enum';
+import { Roles } from './roles.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -19,6 +20,7 @@ export class AuthController {
     }
 
     @Get('profile')
+    @Roles(Role.OWNER, Role.PROFESSOR, Role.STUDENT)
     getProfile(@Request() req) {
         return req.user;
     }
