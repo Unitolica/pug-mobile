@@ -15,22 +15,38 @@ export class ProjectController {
     return this.projectService.create(createProjectDto);
   }
 
-  @Get()
+  @Get('assigned')
   @Roles(Role.OWNER, Role.PROFESSOR, Role.STUDENT)
+  findAsigned(@Request() req) {
+    return this.projectService.findAssigned(req.user);
+  }
+
+  @Get('all')
+  @Roles(Role.OWNER, Role.PROFESSOR, Role.STUDENT)
+  findMine(@Request() req) {
+    return this.projectService.findMine(req.user);
+  }
+
+  @Get()
   findAll() {
     return this.projectService.findAll();
   }
 
   @Get(':id')
   @Roles(Role.OWNER, Role.PROFESSOR, Role.STUDENT)
-  findOne(@Param('id') id: string) {
-    return this.projectService.findOne(id);
+  findOne(@Request() req, @Param('id') id: string) {
+    return this.projectService.findOne(id, req.user);
   }
 
   @Patch(':id')
+  update(@Param('id') id: string, @Body() updateProjectDto: UpdateProjectDto) {
+    return this.projectService.update(id, updateProjectDto);
+  }
+
+  @Patch('update/:id')
   @Roles(Role.OWNER, Role.PROFESSOR, Role.STUDENT)
-  update(@Request() req, @Param('id') id: string, @Body() updateProjectDto: UpdateProjectDto) {
-    return this.projectService.update(id, updateProjectDto, req.user);
+  updateMine(@Request() req, @Param('id') id: string, @Body() updateProjectDto: UpdateProjectDto) {
+    return this.projectService.updateMine(id, updateProjectDto, req.user);
   }
 
   @Delete(':id')

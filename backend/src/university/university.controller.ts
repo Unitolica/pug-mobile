@@ -15,13 +15,11 @@ export class UniversityController {
   }
 
   @Get()
-  @Roles(Role.OWNER, Role.PROFESSOR, Role.STUDENT)
   findAll() {
     return this.universityService.findAll();
   }
 
   @Get(':id')
-  @Roles(Role.OWNER, Role.PROFESSOR, Role.STUDENT)
   findOne(@Param('id') id: string) {
     return this.universityService.findOne(id);
   }

@@ -97,11 +97,31 @@ export class UserService {
   }
 
   async findById(id: string) {
-
     const response = await this.prisma.user.findUnique({
       where: { 
         id, 
       },
+    });
+
+    response['universities'] = await this.prisma.userOnUniversities.findMany({
+      where: { userId: id },
+      select: {
+        university: true
+      }
+    });
+
+    response['courses'] = await this.prisma.userOnCourses.findMany({
+      where: { userId: id },
+      select: {
+        course: true
+      }
+    });
+
+    response['projects'] = await this.prisma.usersOnProjects.findMany({
+      where: { userId: id },
+      select: {
+        project: true
+      }
     });
 
     return response;
@@ -117,10 +137,7 @@ export class UserService {
     return response;
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto, user: any) {
-    if (user.role == Role.STUDENT && user.id != id) {
-      throw new UnauthorizedException();
-    }
+  async update(id: string, updateUserDto: UpdateUserDto) {
 
     if (updateUserDto.password){
     updateUserDto.password = await this.crypt.encrypt(updateUserDto.password);

@@ -130,12 +130,52 @@ export class ProjectService {
     }
   }
 
+  async findAssigned(user: any) {
+    const usersOnProjects = await this.prisma.usersOnProjects.findMany({
+      where: {
+        userId: user.id
+      },
+      select: {
+        project: true
+      }
+    });
+
+    return usersOnProjects;
+  }
+
+  async findMine(user: any) {
+    const projectsByCourses = await this.prisma.coursesOnProjects.findMany({
+      where: {
+        courseId: user.courses.map((course) => course.id)
+      },
+      select: {
+        project: true
+      }
+    });
+    const projectByUniversities = await this.prisma.universitiesOnProjects.findMany({
+      where: {
+        universityId: user.universities.map((university) => university.id),
+      },
+      select: {
+        project: true
+      }
+    });
+
+    const projects = projectsByCourses.filter((projectId) => projectByUniversities.includes(projectId));
+
+    return projects;
+  }
+
   async findAll() {
     const projects = await this.prisma.project.findMany();
     return projects;
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, user: any) {
+    if (user.role != Role.ADMIN && !user.projects.some((project) => project.id == response.id)) {
+      throw new UnauthorizedException();
+    }
+
     const response = await this.prisma.project.findUnique({
       where: { 
         id, 
@@ -146,13 +186,47 @@ export class ProjectService {
       throw { statusCode: 404 , message: "Not Found"}
     }
 
+    if (user.role == Role.STUDENT) {
+      const users = await this.prisma.usersOnProjects.findMany({
+        where: {
+          projectId: id
+        },
+        select: {
+          user: true
+        }
+      });
+
+      for (user in users) {
+        const actualUser = await this.prisma.user.findUnique({
+          where: {
+            id: user.id
+          }
+        });
+
+        if (actualUser.id) {
+          if (!response[actualUser.role]) {
+            response[actualUser.role] = [];
+          }
+
+          response[actualUser.role].push(actualUser.id);
+        }
+      }
+    }
+
     return response;
   }
 
-  async update(id: string, updateProjectDto: UpdateProjectDto, user: any) {
+  async updateMine(id: string, updateProjectDto: UpdateProjectDto, user: any) {
     if (user.role == Role.STUDENT && user.id != id) {
       throw new UnauthorizedException();
     }
+
+    return this.update(id, updateProjectDto);
+  }
+
+
+  async update(id: string, updateProjectDto: UpdateProjectDto) {
+
 
     try {
       const response = await this.prisma.project.update({

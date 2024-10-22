@@ -14,6 +14,9 @@ export class TimeLogService {
     if (user.role == Role.STUDENT && user.id != createTimeLogDto.requestedById) {
       throw new UnauthorizedException();
     }
+    if (user.role == Role.STUDENT && !user.projects.some((project) => project.id == createTimeLogDto.projectId)) {
+      throw new UnauthorizedException();
+    }
 
     createTimeLogDto.deniedById = null;
     createTimeLogDto.approvedById = null;
@@ -47,14 +50,34 @@ export class TimeLogService {
     return response;
   }
 
-  async findOne(id: string) {
+  async findAllFromProject(user: any) {
+    const response = await this.prisma.timeLog.findMany(
+      {
+        where: {
+          projectId: {
+            in: user.projects.map((project) => project.id)
+          }
+        }
+      }
+    );
+    return response;
+  }
+
+  async findOne(id: string, user: any) {
     const response = await this.prisma.timeLog.findUnique({
       where: {
         id: id
       }
     });
+
+    if (user.role != Role.ADMIN && !user.projects.some((project) => project.id == response.projectId)) {
+      throw new UnauthorizedException();
+    }
+
     return response;
   }
+
+
 
   async update(id: string, updateTimeLogDto: UpdateTimeLogDto, user: any) {
     if (user.role == Role.STUDENT && user.id != id) {
@@ -91,42 +114,5 @@ export class TimeLogService {
       }
     });
     return { message: "Deleted" };
-  }
-
-  async approve(id: string, updateTimeLogDto: UpdateTimeLogDto) {
-    if (!updateTimeLogDto.approvedById) {
-      throw { statusCode: 400, message: 'ApprovedById is required!' }
-    }
-    try{
-    const response = await this.prisma.timeLog.update({
-      where: {
-        id: id
-      },
-      data: {
-        approvedById: updateTimeLogDto.approvedById
-      }
-    });
-    return { response, message: "Approved" };
-  } catch (error) {
-    return {error, message: "Não foi possível aprovar o registro de tempo!"};
-  }
-  }
-  async deny(id: string, updateTimeLogDto: UpdateTimeLogDto) {
-    if (!updateTimeLogDto.deniedById) {
-      throw { statusCode: 400, message: 'DeniedById is required!' }
-    }
-    try{
-    const response = await this.prisma.timeLog.update({
-      where: {
-        id: id
-      },
-      data: {
-        deniedById: updateTimeLogDto.deniedById
-      }
-    });
-    return { response, message: "Denied" };
-  } catch (error) {
-    return {error, message: "Não foi possível aprovar o registro de tempo!"};
-  }
   }
 }

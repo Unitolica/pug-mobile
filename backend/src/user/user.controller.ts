@@ -9,27 +9,39 @@ import { Roles } from '../auth/roles.decorator';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  @Get('me')
+  @Roles(Role.OWNER, Role.PROFESSOR, Role.STUDENT)
+  me(@Request() req) {
+    return this.userService.findById(req.user.id);
+  }
+
+  @Patch('updateMyCourses')
+  @Roles(Role.STUDENT)
+  updateCourses(@Request() req, @Body() coursesString: string[]) {
+    const updateUserDto = new UpdateUserDto();
+    updateUserDto.courses = coursesString;
+
+    return this.userService.update(req.user.id, updateUserDto);
+  }
+
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
     return this.userService.create(createUserDto);
   }
 
   @Get()
-  @Roles(Role.OWNER, Role.PROFESSOR, Role.STUDENT)
   findAll() {
     return this.userService.findAll();
   }
 
   @Get(':id')
-  @Roles(Role.OWNER, Role.PROFESSOR, Role.STUDENT)
   findById(@Param('id') id: string) {
     return this.userService.findById(id);
   }
 
   @Patch(':id')
-  @Roles(Role.STUDENT)
   update(@Request() req, @Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.userService.update(id, updateUserDto, req.user);
+    return this.userService.update(id, updateUserDto);
   }
 
   @Delete(':id')
