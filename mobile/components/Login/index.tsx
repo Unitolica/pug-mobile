@@ -18,6 +18,9 @@ import { useAuth } from "@/context/auth"
 import { Colors } from "@/constants/Colors";
 import { Ionicons } from "@expo/vector-icons";
 
+import Lock from "@/assets/images/lock.svg";
+import Stundents from "@/assets/images/students.svg";
+
 export function Login() {
   const { login } = useAuth()
 
@@ -43,10 +46,7 @@ export function Login() {
         <ScrollView contentContainerStyle={styles.loginView}>
           <View style={styles.container}>
             <View style={styles.imageContainer}>
-              <Image
-                source={require("@/assets/images/students.png")}
-                style={styles.students}
-              />
+              <Stundents style={styles.students} />
             </View>
 
             <View style={styles.welcomeWrapper}>
@@ -85,6 +85,7 @@ export function Login() {
                   placeholder="Senha"
                   secureTextEntry={true}
                   onChangeText={field.onChange}
+                  autoCapitalize="none"
                 />
               )}
               name="name"
@@ -94,7 +95,7 @@ export function Login() {
 
             <View style={styles.forgotPassword}>
               <Pressable onPress={forgotPassword}>
-                <Text style={styles.forgotPasswordText}>Esqueci a senha</Text>
+                <Text style={styles.forgotPasswordText}>Esqueci a senha <Lock height={10} /></Text>
               </Pressable>
             </View>
 
