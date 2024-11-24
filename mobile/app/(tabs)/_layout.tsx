@@ -5,8 +5,8 @@ import { TabBarIcon } from "@/components/navigation/TabBarIcon";
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/context/auth";
 import { Login } from "@/components/Login";
-import { SQLiteProvider } from "expo-sqlite";
-import { initializeDatabase } from "@/database/initDatabase";
+// import { SQLiteProvider } from "expo-sqlite";
+// import { initializeDatabase } from "@/database/initDatabase";
 
 export default function TabLayout() {
   const { isLoggedIn, user } = useAuth();
@@ -16,7 +16,8 @@ export default function TabLayout() {
   }
 
   return (
-    <SQLiteProvider databaseName={`${user?.id}-local-database.db`} onInit={initializeDatabase}>
+    <>
+    {/* <SQLiteProvider databaseName={`${user?.id}-local-database.db`} onInit={initializeDatabase}> */}
       <Tabs
         screenOptions={{
           tabBarActiveTintColor: "white",
@@ -55,6 +56,7 @@ export default function TabLayout() {
           }}
         />
       </Tabs>
-    </SQLiteProvider>
+    {/* </SQLiteProvider> */}
+    </>
   );
 }

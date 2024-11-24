@@ -1,59 +1,75 @@
 import { useEffect, useState } from "react";
-import { StyleSheet, View, Pressable, Text, Platform, ActionSheetIOS, Alert, Modal } from "react-native";
+import { StyleSheet, View, ScrollView, Pressable, Text, Platform, ActionSheetIOS, Alert, Modal, ActivityIndicator } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Colors } from "@/constants/Colors";
 import { AnimatedCircularProgress } from "react-native-circular-progress";
 import { Picker } from "@react-native-picker/picker";
 import * as Location from "expo-location";
-import { useLocalDatabase } from "@/database/useLocalDatabase";
+import db from "@/database/initDatabase";
+import { initDatabase } from "@/database/initDatabase";
+import { datesToDurationString } from "@/utils/date";
+import { ActivityManager } from "@/database/activityManager";
+import { ProjectActivity } from "@/database/types";
 
-const hourInTimestamp = 60 * 60 * 1000
-const hoursRegisters = [
-  {
-    init: new Date(Date.now()),
-    end: new Date(Date.now() + (2 * hourInTimestamp)),
-    responsible: "João"
-  },
-  {
-    init: new Date(Date.now()),
-    end: new Date(Date.now() + (1.5 * hourInTimestamp)),
-    responsible: "Maria"
-  },
-  {
-    init: new Date(Date.now()),
-    end: new Date(Date.now() + (4 * hourInTimestamp)),
-    responsible: "José"
-  },
-]
-
-const usersProjects = [
+const HOUR_IN_TIMESTAMP = 60 * 60 * 1000
+const USERS_PROJECTS = [
   {
     id: "project1",
-    title: "Projeto 1",
-    description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam nec purus nec eros}"
+    title: "Projeto 1"
   },
   {
     id: "project2",
-    title: "Projeto 2",
-    description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam nec purus nec eros}"
-  },
+    title: "Projeto 2"
+  }
 ]
+
+type UserProject = {
+  id: string
+  title: string
+}
+
+type HourRegister = {
+  projectTitle: string
+  projectId: string
+  description: string
+  init: number
+  end: number
+  approvedDate?: number
+  responsible: string
+  timeSpent: number
+}
+
+type TimeLog = {
+  id: string
+  project_ijd: string
+  init_id: string
+  time: number
+}
+
 
 export default function HomeScreen() {
   const [donePercentage, setDonePercentage] = useState(0);
-  const [lastsHoursRegisters, setLastsHoursRegisters] = useState([])
-  const [selectedProject, setSelectedProject] = useState("project1");
-  const [isAddHoursModalOpen, setIsAddHoursModalOpen] = useState(false)
-  const [currentActionId, setCurrentActionId] = useState<string | null>(null)
 
-  const localDb = useLocalDatabase()
+  const [hoursRegisters, setHoursRegister] = useState<HourRegister[]>([])
+
+  const [userProjects, setUserProjects] = useState<Record<string, UserProject>>({})
+  const [selectedProject, setSelectedProject] = useState<string | null>(null);
+  const [showFinishActivityModal, setShowFinishActivityModal] = useState(false)
+
+  const [currentActivity, setCurrentActivity] = useState<ProjectActivity | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   async function openFullHistory() {
     console.log("Historico completo")
   }
 
+  async function refreshActivityState() {
+    const activity = await ActivityManager.getCurrentActivity();
+    setCurrentActivity(activity);
+  };
+
   function openIOSPicker() {
-    const labels = usersProjects.map(option => option.title);
+    const labels = USERS_PROJECTS.map(option => option.title);
     ActionSheetIOS.showActionSheetWithOptions(
       {
         options: [...labels, "Cancelar"],
@@ -61,73 +77,137 @@ export default function HomeScreen() {
       },
       (buttonIndex) => {
         if (buttonIndex !== labels.length) {
-          setSelectedProject(usersProjects[buttonIndex].id);
+          const newSelectedProject = Object.values(userProjects)[buttonIndex].id
+          setSelectedProject(newSelectedProject);
+          listActivities(undefined, newSelectedProject)
         }
       }
     );
   };
 
-  async function handleInit() {
+  async function listActivities(projects?: Record<string, UserProject>, projectSelected?: string) {
     try {
+      const result = await db.getAllAsync<HourRegister>(`
+        SELECT
+            i.id AS init_id,
+            i.projectId,
+            i.timestamp AS init,
+            i.registerType AS init_registerType,
+            e.id AS end_id,
+            e.timestamp AS end,
+            e.approvedDate,
+            e.description,
+            CASE
+                WHEN e.id IS NOT NULL THEN 1
+                ELSE 0
+            END AS isFinished,
+            CASE
+                WHEN e.id IS NOT NULL THEN (e.timestamp - i.timestamp)
+                ELSE NULL
+            END AS timeSpent
+        FROM
+            time_logs i
+        LEFT JOIN
+            time_logs  e
+        ON
+            i.id = e.init_id AND e.registerType = "end"
+        WHERE
+            i.registerType = "init"
+            AND
+            i.projectId = ?
+        ;
+      `, [String(projectSelected ?? selectedProject)]);
+
+      console.info("result")
+
+      const projectsToUse = projects ?? userProjects
+      const formatted = result.reduce((acc, curr) => {
+        curr.projectTitle = projectsToUse[curr.projectId].title
+        acc.push(curr)
+
+        return acc
+      }, [] as HourRegister[])
+      setHoursRegister(formatted)
+    } catch (error) {
+      console.error("Error checking existing activity:", error);
+      Alert.alert("Error", "Falha ao listar as suas atividades, entre em contato com o seu gerente de projeto.");
+    }
+  }
+
+  async function handleActivity() {
+    try {
+      setIsLoading(true);
       const { status } = await Location.requestForegroundPermissionsAsync();
+
       if (status !== "granted") {
-        throw new Error("Permissão negada")
+        Alert.alert("Permissão", "Permissão de localização negada! Precisamos de acesso a sua localização para o registro de novas atividades.");
+        return;
       }
 
-      const location = await Location.getCurrentPositionAsync({
-        mayShowUserSettingsDialog: true,
-      });
+      const location = await Location.getCurrentPositionAsync({});
+      const locationData = {
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude
+      };
 
-      const { id } = await localDb.registerInitAction(selectedProject, location)
-      setCurrentActionId(id)
-      try { getHoursRegisters } catch (_) {}
-    } catch (err) {
-      if (err instanceof Error) {
-        if (err.message === "Permissão negada") {
-          Alert.alert("Permissão negada", "Você deve permitir o acesso a localização para registrar horas")
+      let success: boolean;
+
+      if (!currentActivity) {
+        success = await ActivityManager.startActivity(selectedProject!, locationData);
+        if (success) {
+          Alert.alert("Sucesso", "Atividade iniciada com sucesso");
+        } else {
+          Alert.alert("Falha", "Falhar ao iniciar a atividade");
+        }
+      } else {
+        success = await ActivityManager.endActivity(locationData);
+        if (success) {
+          Alert.alert("Sucesso", "Atividade finalizada com sucesso");
+        } else {
+          Alert.alert("Falha", "Falha ao finalizar atividade");
         }
       }
+
+      if (success) {
+        await refreshActivityState();
+        await listActivities();
+      }
+    } catch (error) {
+      Alert.alert("Error", error instanceof Error ? error.message : "An error occurred");
+    } finally {
+      setIsLoading(false);
     }
-  }
+  };
 
-  async function getCurrentAction () {
-    try {
-      const currentAction = await localDb.getCurrentAction(selectedProject)
-      console.log("currentAction", currentAction)
-    } catch (err) {
-      console.error("error while getting current action on home screen", err)
-    }
-  }
+  async function fetchProjects() {
+    const usersProjectsFormatted = USERS_PROJECTS.reduce((acc, curr) => {
+      acc[curr.id] = curr;
+      return acc;
+    }, {} as Record<string, UserProject>)
 
-  async function getHoursRegisters() {
-    const registers = await localDb.getHoursRegisters(selectedProject)
-    console.log("register", registers)
-    // const percentage = (8 / 20) * 100
-    // const lastsHoursRegisters = hoursRegisters.slice(0, 3)
-    //
-    // setDonePercentage(percentage)
-    // setLastsHoursRegisters(lastsHoursRegisters as any)
-  }
-
-  async function fetchInitData() {
-    await getCurrentAction()
-    await getHoursRegisters()
+    setUserProjects(usersProjectsFormatted)
+    setSelectedProject(USERS_PROJECTS[0].id)
+    await listActivities(usersProjectsFormatted)
   }
 
   useEffect(() => {
-    setTimeout(() => {
-      fetchInitData()
-    }, 4000)
+    const init = async () => {
+      await initDatabase();
+      await refreshActivityState();
+      await fetchProjects();
+    };
+
+    init();
   }, []);
 
   return (
-    <View style={styles.viewContainer}>
+    <ScrollView style={styles.scrollViewContainer} contentContainerStyle={styles.scrollViewContent}>
       {Platform.OS === "ios" && (
         <Pressable
           onPress={openIOSPicker}
         >
           <View style={styles.projectSelectorWrapper}>
-            <Text style={styles.projectSelectorText}>Projeto 1 <Ionicons name="chevron-down" color={Colors.light.icon} /></Text>
+            <Text style={styles.projectSelectorText}>{userProjects[selectedProject ?? ""]?.title} <Ionicons name="chevron-down" color={Colors.light.icon} /></Text>
           </View>
         </Pressable>
       )}
@@ -138,13 +218,15 @@ export default function HomeScreen() {
           onValueChange={(itemValue) => {
             setSelectedProject(itemValue);
           }}
+          dropdownIconColor={Colors.light.primary}
+          dropdownIconRippleColor={Colors.light.primary}
           style={{
             width: 150,
             justifyContent: "center",
             alignItems: "center",
           }}
         >
-          {usersProjects.map((option) => (
+          {USERS_PROJECTS.map((option) => (
             <Picker.Item key={option.id} label={option.title} value={option.id} />
           ))}
         </Picker>
@@ -184,58 +266,56 @@ export default function HomeScreen() {
 
       <View style={styles.addHoursWrapper}>
         <Text style={styles.addHoursText}>
-          Adicionar horas
+          {currentActivity ? "Encerrar atividade" : "Iniciar atividade"}
         </Text>
-        <Pressable onPress={() => setIsAddHoursModalOpen(true)} style={styles.addHoursButton}>
-          <Ionicons name="add" size={30} color="white" />
-        </Pressable>
-        <Modal
-          visible={isAddHoursModalOpen}
-          animationType="slide"
+        <Pressable onPress={() => handleActivity()} style={[
+          styles.addHoursButton,
+          currentActivity && currentActivity.initLog.projectId !== selectedProject ?
+            styles.disabledButton : {}
+        ]}
+          disabled={currentActivity && currentActivity?.initLog?.projectId !== selectedProject}
         >
-          <View style={{
-            flex: 1,
-            justifyContent: "center",
-            alignItems: "center"
-          }}
-          >
-            <Text>Adicionar horas</Text>
-            <Pressable onPress={() => setIsAddHoursModalOpen(false)}>
-              <Text>Fechar</Text>
-            </Pressable>
-
-            <Pressable onPress={handleInit}>
-              <Text>Confirmar</Text>
-            </Pressable>
-          </View>
-        </Modal>
-      </View>
-
-      <View style={styles.lastsHistoryWrapper}>
-        {
-          lastsHoursRegisters.map((hourRegister, index) => (
-            <HourRegister key={index} {...hourRegister} />
-          ))
-        }
-
-        <Pressable style={styles.openFullHistoryButton} onPress={openFullHistory}>
-          <Text style={styles.openFullHistoryText}>
-            Mostrar historico completo
-            <Ionicons name="chevron-forward" size={10} color="white" />
-          </Text>
+          {
+            isLoading ? (
+              <ActivityIndicator size="small" color="white" />
+            ) : (
+              currentActivity
+                ? (
+                  <Ionicons name="checkmark" size={30} color="white" />
+                )
+                : (
+                  <Ionicons name="add" size={30} color="white" />
+                )
+            )
+          }
         </Pressable>
+        {currentActivity && currentActivity.initLog.projectId !== selectedProject && (
+          <Text style={styles.warningText}>
+            Você tem uma atividade em andamento em outro projeto
+          </Text>
+        )}
       </View>
-    </View>
+
+      {hoursRegisters.length > 0 && (
+        <View style={styles.lastsHistoryWrapper}>
+          {
+            hoursRegisters.splice(0, 4).map(register => (
+              <HourRegisterComponent key={`${register.projectId}-${register.end}`} register={register} />
+            ))
+          }
+          <Pressable style={styles.openFullHistoryButton} onPress={openFullHistory}>
+            <Text style={styles.openFullHistoryText}>
+              Mostrar historico completo
+              <Ionicons name="chevron-forward" size={10} color="white" />
+            </Text>
+          </Pressable>
+        </View>
+      )}
+    </ScrollView>
   );
 }
 
-type HourRegisterProps = {
-  init: Date
-  end: Date
-  responsible: string
-}
-function HourRegister({ init, end, responsible }: HourRegisterProps) {
-  const timeSpent = (end.getTime() - init.getTime()) / 1000 / 60 / 60
+function HourRegisterComponent({ register }: { register: HourRegister }) {
   const styles = StyleSheet.create({
     hoursRegisterWrapper: {
       flexDirection: "row",
@@ -247,38 +327,49 @@ function HourRegister({ init, end, responsible }: HourRegisterProps) {
     },
     hoursRegisterText: {
       textAlign: "center",
-      width: "33%",
     },
     hoursRegisterTextWithBorder: {
       textAlign: "center",
-      width: "33%",
-      borderStartWidth: 1,
       borderEndWidth: 1,
-      borderRightWidth: 1,
-      borderLeftWidth: 1,
+      paddingInline: 2
     },
   })
 
   return (
     <View style={styles.hoursRegisterWrapper}>
-      <Text style={styles.hoursRegisterText}>
-        {init.toLocaleDateString()}
+      <Text style={{ ...styles.hoursRegisterTextWithBorder, width: "25%" }}>
+        {register.projectTitle}
       </Text>
 
-      <Text style={styles.hoursRegisterTextWithBorder}>
-        {responsible}
+      <Text style={{ ...styles.hoursRegisterTextWithBorder, width: "25%" }}>
+        {new Date(register.init).toLocaleDateString()}
       </Text>
 
-      <Text style={styles.hoursRegisterText}>
-        {timeSpent} horas
+      <Text style={{ ...styles.hoursRegisterTextWithBorder, width: "35%" }}>
+        {register.responsible ?? "Sem responsavel"}
+      </Text>
+
+      <Text style={{ ...styles.hoursRegisterText, width: "15%" }}>
+        {
+          register.end ? (
+            datesToDurationString(
+              new Date(register.end),
+              new Date(register.init)
+            )
+          ) : (
+            "-"
+          )
+        }
       </Text>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  viewContainer: {
+  scrollViewContainer: {
     paddingTop: Platform.OS === "android" ? 30 : 50,
+  },
+  scrollViewContent: {
     flex: 1,
     alignItems: "center"
   },
@@ -357,6 +448,8 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 50,
     backgroundColor: Colors.light.primary,
+    width: "100%",
+    alignItems: "center",
   },
   openFullHistoryText: {
     color: "white",
@@ -366,4 +459,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "column",
   },
+  disabledButton: {
+    opacity: 0.5
+  },
+  warningText: {
+    marginTop: 5,
+    color: "red",
+    fontSize: 12,
+    paddingHorizontal: 5,
+    alignItems: "center",
+  }
 });

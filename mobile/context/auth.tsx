@@ -7,7 +7,7 @@ type User = {
 }
 type AuthContextType = {
   isLoggedIn: boolean;
-  user: User
+  user: User | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 };
@@ -18,8 +18,14 @@ type AuthProviderProps = {
   children: React.ReactNode;
 };
 export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const [ user, setUser ] = useState<User | null>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [ user, setUser ] = useState<User | null>(
+{
+        id: "1",
+        name: "Gabriel Rocha",
+        email: "gabriel04.roch@catolicasc.edu.br"
+      }
+  );
+  const [isLoggedIn, setIsLoggedIn] = useState(true);
 
   async function login (email: string, password: string) {
     try {
