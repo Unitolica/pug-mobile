@@ -4,7 +4,6 @@ import {
   TextInput,
   View,
   Text,
-  Image,
   Pressable,
   Alert,
   TouchableWithoutFeedback,
@@ -45,16 +44,16 @@ export function Login() {
       >
         <ScrollView contentContainerStyle={styles.loginView}>
           <View style={styles.container}>
-            <View style={styles.circleBackground} /> {/* Círculo preto */}
+            <View style={styles.circleBackground} />
             <View style={styles.imageContainer}>
               <Stundents style={styles.students} />
             </View>
-  
+
             <View style={styles.welcomeWrapper}>
               <Text style={styles.welcomeText}>Bem-vindo!</Text>
               <Text style={styles.loginText}>Faça seu login abaixo</Text>
             </View>
-  
+
             <Controller
               control={control}
               render={({ field }) => (
@@ -67,7 +66,7 @@ export function Login() {
                   autoCapitalize="none"
                 />
               )}
-              name="nome"
+              name="email"
               rules={{
                 required: "Voce precisa inserir um email",
                 pattern: {
@@ -76,8 +75,9 @@ export function Login() {
                 }
               }}
             />
-            {errors.email && <Text style={styles.errorText}>{errors.email.message as string}</Text>}
-  
+
+            {!!errors.email && <Text style={styles.errorText}>{errors.email.message as string}</Text>}
+
             <Controller
               control={control}
               render={({ field }) => (
@@ -95,23 +95,23 @@ export function Login() {
               rules={{ required: "Insira uma senha valida" }}
             />
             {errors.name && <Text style={styles.errorText}>{errors.name.message as string}</Text>}
-  
+
             <View style={styles.forgotPassword}>
               <Pressable onPress={forgotPassword}>
                 <Text style={styles.forgotPasswordText}>Esqueci a senha <Lock height={10} /></Text>
               </Pressable>
             </View>
           </View>
-          <View style={{ paddingHorizontal: 32 }}> {/* Adicione padding ao contêiner */}
-  <View style={styles.loginButton}>
-    <Pressable style={styles.pressable} onPress={handleSubmit(onSubmit)}>
-      <Text style={styles.loginButtonText}>
-        Continuar
-      </Text>
-      <Ionicons size={14} name="chevron-forward" color="white" />
-    </Pressable>
-  </View>
-</View>
+          <View style={{ paddingHorizontal: 32 }}>
+            <View style={styles.loginButton}>
+              <Pressable style={styles.pressable} onPress={handleSubmit(onSubmit)}>
+                <Text style={styles.loginButtonText}>
+                  Continuar
+                </Text>
+                <Ionicons size={14} name="chevron-forward" color="white" />
+              </Pressable>
+            </View>
+          </View>
 
         </ScrollView>
       </KeyboardAvoidingView>
@@ -129,22 +129,22 @@ const styles = StyleSheet.create({
   },
   circleBackground: {
     position: 'absolute',
-    top: 110, 
+    top: 110,
     left: '80%',
-    width: 250, 
+    width: 250,
     height: 250,
     borderRadius: 200,
     backgroundColor: 'black',
-    transform: [{ translateX: -200 }], 
+    transform: [{ translateX: -200 }],
   },
   imageContainer: {
-    width: 340, 
+    width: 340,
     height: 400,
-    borderRadius: 200, 
-    overflow: 'hidden', 
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    marginBottom: 20, 
+    borderRadius: 200,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
   },
   students: {
     width: '90%',
@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
     fontSize: Platform.OS === "android" ? 14 : 18,
   },
   loginButton: {
-    paddingHorizontal: 20, 
+    paddingHorizontal: 20,
     marginTop: `auto`,
     backgroundColor: Colors.light.primary,
     borderRadius: 30,
