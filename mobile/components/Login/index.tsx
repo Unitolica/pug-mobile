@@ -45,27 +45,29 @@ export function Login() {
       >
         <ScrollView contentContainerStyle={styles.loginView}>
           <View style={styles.container}>
+            <View style={styles.circleBackground} /> {/* Círculo preto */}
             <View style={styles.imageContainer}>
               <Stundents style={styles.students} />
             </View>
-
+  
             <View style={styles.welcomeWrapper}>
               <Text style={styles.welcomeText}>Bem-vindo!</Text>
               <Text style={styles.loginText}>Faça seu login abaixo</Text>
             </View>
-
+  
             <Controller
               control={control}
               render={({ field }) => (
                 <TextInput
                   {...field}
                   style={styles.input}
-                  placeholder="Email ou usuario"
+                  placeholder="nome.sobrenome@catolicasc.edu.br"
+                  placeholderTextColor="gray"
                   onChangeText={field.onChange}
                   autoCapitalize="none"
                 />
               )}
-              name="email"
+              name="nome"
               rules={{
                 required: "Voce precisa inserir um email",
                 pattern: {
@@ -75,7 +77,7 @@ export function Login() {
               }}
             />
             {errors.email && <Text style={styles.errorText}>{errors.email.message as string}</Text>}
-
+  
             <Controller
               control={control}
               render={({ field }) => (
@@ -83,6 +85,7 @@ export function Login() {
                   {...field}
                   style={styles.input}
                   placeholder="Senha"
+                  placeholderTextColor="gray"
                   secureTextEntry={true}
                   onChangeText={field.onChange}
                   autoCapitalize="none"
@@ -92,23 +95,24 @@ export function Login() {
               rules={{ required: "Insira uma senha valida" }}
             />
             {errors.name && <Text style={styles.errorText}>{errors.name.message as string}</Text>}
-
+  
             <View style={styles.forgotPassword}>
               <Pressable onPress={forgotPassword}>
                 <Text style={styles.forgotPasswordText}>Esqueci a senha <Lock height={10} /></Text>
               </Pressable>
             </View>
-
-
-            <View style={styles.loginButton}>
-              <Pressable style={styles.pressable} onPress={handleSubmit(onSubmit)}>
-                <Text style={styles.loginButtonText}>
-                  Continuar
-                </Text>
-                <Ionicons size={14} name="chevron-forward" color="white" />
-              </Pressable>
-            </View>
           </View>
+          <View style={{ paddingHorizontal: 32 }}> {/* Adicione padding ao contêiner */}
+  <View style={styles.loginButton}>
+    <Pressable style={styles.pressable} onPress={handleSubmit(onSubmit)}>
+      <Text style={styles.loginButtonText}>
+        Continuar
+      </Text>
+      <Ionicons size={14} name="chevron-forward" color="white" />
+    </Pressable>
+  </View>
+</View>
+
         </ScrollView>
       </KeyboardAvoidingView>
     </TouchableWithoutFeedback>
@@ -123,13 +127,29 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 32,
   },
+  circleBackground: {
+    position: 'absolute',
+    top: 110, 
+    left: '80%',
+    width: 250, 
+    height: 250,
+    borderRadius: 200,
+    backgroundColor: 'black',
+    transform: [{ translateX: -200 }], 
+  },
   imageContainer: {
-    width: "100%",
+    width: 340, 
+    height: 400,
+    borderRadius: 200, 
+    overflow: 'hidden', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    marginBottom: 20, 
   },
   students: {
-    maxWidth: "100%",
-    height: Platform.OS === "android" ? 300 : 400,
-    objectFit: "contain",
+    width: '90%',
+    height: '100%',
+    objectFit: 'contain',
   },
   welcomeWrapper: {
     justifyContent: "center",
@@ -143,11 +163,12 @@ const styles = StyleSheet.create({
   loginText: {
     fontSize: Platform.OS === "android" ? 14 : 20,
     fontWeight: "bold",
+    color: "red",
   },
   input: {
     height: Platform.OS === "android" ? 25 : 40,
-    fontSize: Platform.OS === "android" ? 14 : 20,
-    borderColor: "gray",
+    fontSize: Platform.OS === "android" ? 14 : 12,
+    borderColor: "black",
     borderWidth: 1,
     marginBottom: 20,
     padding: Platform.OS === "android" ? 5 : 8,
@@ -169,12 +190,13 @@ const styles = StyleSheet.create({
     fontSize: Platform.OS === "android" ? 14 : 18,
   },
   loginButton: {
-    marginTop: 30,
+    paddingHorizontal: 20, 
+    marginTop: `auto`,
     backgroundColor: Colors.light.primary,
-    borderRadius: 50,
-    height: 40,
+    borderRadius: 30,
+    height: 60,
     justifyContent: "center",
-    alignItems: "center",
+    marginBottom: 70,
   },
   pressable: {
     width: "100%",
@@ -187,3 +209,4 @@ const styles = StyleSheet.create({
     color: "white",
   },
 })
+

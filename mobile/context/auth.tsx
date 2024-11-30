@@ -25,12 +25,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         email: "gabriel04.roch@catolicasc.edu.br"
       }
   );
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false) ;
 
   async function login (email: string, password: string) {
     try {
       setIsLoggedIn(true)
-      setUser({
+      setUser({ 
         id: "1",
         name: "Gabriel Rocha",
         email: "gabriel04.roch@catolicasc.edu.br"
