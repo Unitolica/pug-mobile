@@ -1,20 +1,53 @@
-import { NavLink, Link } from "react-router";
+import { NavLink } from "react-router";
 
 export function Header() {
   return (
-    <header className="flex bg-primary justify-between items-center w-full bg-zinc-200 border-b border-b-black p-4">
-      <h1 className="text-lg font-bold">Administrativo</h1>
-      <nav className="flex gap-3 text-md">
+    <header className="flex bg-primary justify-between items-center w-full bg-zinc-200 border-b border-b-black py-4 px-3">
+      <NavLink
+        to="/"
+        className={({ isActive }) =>
+          isActive ? "text-lg font-bold underline" : "text-lg"
+        }
+      >
+        Inicio
+      </NavLink>
+
+      <nav className="flex gap-2 md:gap-4 text-md">
         <NavLink
-          to="/"
+          to="/projetos"
           className={({ isActive }) =>
-            isActive ? "active" : ""
+            isActive ? "font-bold underline" : ""
           }
         >
-          Inicio
+          Projetos
         </NavLink>
 
-        <Link to="/projetos">Projetos</Link>
+        <NavLink
+          to="/cursos"
+          className={({ isActive }) =>
+            isActive ? "font-bold underline" : ""
+          }
+        >
+          Cursos
+        </NavLink>
+
+        <NavLink
+          to="/parceiros"
+          className={({ isActive }) =>
+            isActive ? "font-bold underline" : ""
+          }
+        >
+          Parceiros
+        </NavLink>
+
+        <NavLink
+          to="/universidades"
+          className={({ isActive }) =>
+            isActive ? "font-bold underline" : ""
+          }
+        >
+          Universidades
+        </NavLink>
       </nav>
     </header>
   );
