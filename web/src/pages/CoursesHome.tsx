@@ -33,12 +33,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+  MultiSelector,
+  MultiSelectorContent,
+  MultiSelectorInput,
+  MultiSelectorItem,
+  MultiSelectorList,
+  MultiSelectorTrigger,
+} from "@/components/ui/multi-select";
 
 const CreateCourseSchema = z.object({
   identifier: z.string({ required_error: "Identificador unico eh requirido" }).min(3, {
@@ -51,7 +52,7 @@ const CreateCourseSchema = z.object({
     message: "Sigla do curso deve conter no minimo 3 caracteres"
   }),
   internalobs: z.string().optional(),
-  universities: z.string(),
+  universities: z.array(z.string()).nonempty("Selecione ao menos uma universidade"),
 })
 
 type Course = z.infer<typeof CreateCourseSchema>
@@ -81,7 +82,8 @@ export default function CoursesHomePage() {
       identifier: "",
       name: "",
       acronym: "",
-      internalobs: ""
+      internalobs: "",
+      universities: []
     }
   })
 
@@ -203,29 +205,25 @@ export default function CoursesHomePage() {
                     control={form.control}
                     name="universities"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Universidade</FormLabel>
-                        <FormControl>
-                          <Select
-                            {...field}
-                            onValueChange={(value) => {
-                              field.onChange({ target: { value }})
-                            }}
-                          >
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Universidade" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {/* Fazer dinamico */}
-                              <SelectItem value="jaragua-rau">Jaragua do Sul - Rau</SelectItem>
-                              <SelectItem value="jaragua-centro">Jaragua do Sul - Centro</SelectItem>
-                              <SelectItem value="joinville">Joinville</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                        <FormDescription>
-                          Selecione a qual universidade este curso pertence
-                        </FormDescription>
+                      <FormItem className="w-full">
+                        <FormLabel>Universidades</FormLabel>
+                        <MultiSelector
+                          onValuesChange={field.onChange}
+                          values={field.value}
+                        >
+                          <MultiSelectorTrigger>
+                            <MultiSelectorInput placeholder="Selecione universidades" />
+                          </MultiSelectorTrigger>
+                          <MultiSelectorContent>
+                            <MultiSelectorList>
+                              {(["Jaragua do Sul - Rau", "Jaragua do Sul - Centro", "Joinville - Centro"]).map((uni) => (
+                                <MultiSelectorItem key={uni} value={uni}>
+                                  <span>{uni}</span>
+                                </MultiSelectorItem>
+                              ))}
+                            </MultiSelectorList>
+                          </MultiSelectorContent>
+                        </MultiSelector>
                         <FormMessage />
                       </FormItem>
                     )}
