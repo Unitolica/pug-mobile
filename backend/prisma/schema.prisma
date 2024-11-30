@@ -39,8 +39,10 @@ enum Role {
 }
 
 model University {
-  id                     String                   @id @default(uuid())
-  name                   String?
+  id                     String                   @id
+  name                   String
+  description            String?
+  internalobs            String?
   UniversitiesOnCourses  UniversitiesOnCourses[]
   UserOnUniversities     UserOnUniversities[]
   UniversitiesOnProjects UniversitiesOnProjects[]

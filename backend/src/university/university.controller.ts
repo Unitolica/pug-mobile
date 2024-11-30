@@ -7,7 +7,7 @@ import { Role } from 'src/auth/res/roles.enum';
 
 @Controller('university')
 export class UniversityController {
-  constructor(private readonly universityService: UniversityService) {}
+  constructor(private readonly universityService: UniversityService) { }
 
   @Post()
   create(@Body() createUniversityDto: CreateUniversityDto) {

@@ -5,30 +5,30 @@ import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
-    constructor(
-        private userService: UserService,
-        private crypt: CryptService,
-        private jwtService: JwtService
-    ) {}
+  constructor(
+    private userService: UserService,
+    private crypt: CryptService,
+    private jwtService: JwtService
+  ) { }
 
-    async validateUser(email: string, password: string, ): Promise<{ access_token: string }> {
-        const user = await this.userService.findByEmail(email);
-        
-        if (!user) {
-            throw { statusCode: 404, message: 'Usuário não encontrado!' };
-        }
+  async validateUser(email: string, password: string,): Promise<{ access_token: string }> {
+    const user = await this.userService.findByEmail(email);
 
-        const validatePassword = await this.crypt.compare(password, user.password);
-
-        if (!validatePassword) {
-            throw { statusCode: 404, message: 'Senha errada para usuário!' };
-        }
-
-        return this.getToken(user.id, user.email);
+    if (!user) {
+      throw { statusCode: 404, message: 'Usuário não encontrado!' };
     }
 
-    async getToken(sub: string, email: string): Promise<{ access_token: string }> {
-        const payload = { sub, email };
-        return {access_token: await this.jwtService.signAsync(payload)};
+    const validatePassword = await this.crypt.compare(password, user.password);
+
+    if (!validatePassword) {
+      throw { statusCode: 404, message: 'Senha errada para usuário!' };
     }
+
+    return this.getToken(user.id, user.email);
+  }
+
+  async getToken(sub: string, email: string): Promise<{ access_token: string }> {
+    const payload = { sub, email };
+    return { access_token: await this.jwtService.signAsync(payload) };
+  }
 }

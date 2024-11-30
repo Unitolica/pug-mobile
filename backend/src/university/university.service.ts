@@ -5,16 +5,22 @@ import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class UniversityService {
-  constructor(private prisma: PrismaService) {}
-  
+  constructor(private prisma: PrismaService) { }
+
   async create(createUniversityDto: CreateUniversityDto) {
     try {
       const response = await this.prisma.university.create({
-        data: createUniversityDto
+        data: {
+          id: createUniversityDto.identifier,
+          name: createUniversityDto.name,
+          description: createUniversityDto.description,
+          internalobs: createUniversityDto.internalobs
+        }
       })
       return { response, message: "Created" };
     } catch (error) {
-      throw {  statusCode: 500, message: 'Erro ao criar Universidade!' }
+      console.error("error while creating university", error)
+      throw { statusCode: 500, message: 'Erro ao criar Universidade!' }
     }
   }
 
@@ -28,7 +34,7 @@ export class UniversityService {
       });
       return { message: "Course Added" };
     } catch (error) {
-      throw {  statusCode: 500, message: 'Erro ao adicionar curso!' }
+      throw { statusCode: 500, message: 'Erro ao adicionar curso!' }
     }
   }
 
@@ -39,27 +45,27 @@ export class UniversityService {
 
   async findOne(id: string) {
     const response = await this.prisma.university.findUnique({
-      where: { 
-        id, 
+      where: {
+        id,
       },
     });
 
     if (!response) {
-      throw { statusCode: 404 , message: "Not Found"}
+      throw { statusCode: 404, message: "Not Found" }
     }
     return response;
   }
 
   async update(id: string, updateUniversityDto: UpdateUniversityDto) {
-    try{
+    try {
       const response = await this.prisma.university.update({
         where: { id },
         data: updateUniversityDto,
       });
       return { response, message: "Updated" };
-      } catch (error) {
-        throw {  statusCode: 500, message: 'Internal Server Error' }
-      }
+    } catch (error) {
+      throw { statusCode: 500, message: 'Internal Server Error' }
+    }
   }
 
   async remove(id: string) {

@@ -11,15 +11,15 @@ import { APP_GUARD } from '@nestjs/core';
   providers: [
     AuthService,
     {
-    provide: APP_GUARD,
-    useClass: AuthGuard,
-  },],
+      provide: APP_GUARD,
+      useClass: AuthGuard,
+    },],
   controllers: [AuthController],
-  imports: [ UserModule, 
+  imports: [UserModule,
     JwtModule.register({
-    global: true,
-    secret: jwtConstants.secret,
-    signOptions: { expiresIn: '7d' },
-  }), ],
+      global: true,
+      secret: jwtConstants.secret,
+      signOptions: { expiresIn: '7d' },
+    }),],
 })
-export class AuthModule {}
+export class AuthModule { }
