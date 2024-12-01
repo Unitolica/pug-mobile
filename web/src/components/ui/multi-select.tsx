@@ -23,12 +23,14 @@ interface MultiSelectorProps
   extends React.ComponentPropsWithoutRef<typeof CommandPrimitive> {
   values: string[];
   onValuesChange: (value: string[]) => void;
+  getLabel: (value: string) => string;
   loop?: boolean;
 }
 
 interface MultiSelectContextProps {
   value: string[];
   onValueChange: (value: any) => void;
+  getLabel(value: string): string;
   open: boolean;
   setOpen: (value: boolean) => void;
   inputValue: string;
@@ -58,6 +60,7 @@ const useMultiSelect = () => {
 const MultiSelector = ({
   values: value,
   onValuesChange: onValueChange,
+  getLabel,
   loop = false,
   className,
   children,
@@ -190,6 +193,7 @@ const MultiSelector = ({
       value={{
         value,
         onValueChange: onValueChangeHandler,
+        getLabel,
         open,
         setOpen,
         inputValue,
@@ -219,7 +223,7 @@ const MultiSelectorTrigger = forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, children, ...props }, ref) => {
-  const { value, onValueChange, activeIndex } = useMultiSelect();
+  const { value, onValueChange, activeIndex, getLabel } = useMultiSelect();
 
   const mousePreventDefault = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -238,28 +242,31 @@ const MultiSelectorTrigger = forwardRef<
       )}
       {...props}
     >
-      {value.map((item, index) => (
-        <Badge
-          key={item}
-          className={cn(
-            "px-2 py-1 rounded-xl flex items-center gap-1",
-            activeIndex === index && "ring-2 ring-muted-foreground ",
-          )}
-          variant={"secondary"}
-        >
-          <span className="text-xs">{item}</span>
-          <button
-            aria-label={`Remove ${item} option`}
-            aria-roledescription="button to remove option"
-            type="button"
-            onMouseDown={mousePreventDefault}
-            onClick={() => onValueChange(item)}
+      {value.map((item, index) => {
+        const label = getLabel(item)
+        return (
+          <Badge
+            key={item}
+            className={cn(
+              "px-2 py-1 rounded-xl flex items-center gap-1",
+              activeIndex === index && "ring-2 ring-muted-foreground ",
+            )}
+            variant={"secondary"}
           >
-            <span className="sr-only">Remove {item} option</span>
-            <RemoveIcon className="h-4 w-4 hover:stroke-destructive" />
-          </button>
-        </Badge>
-      ))}
+            <span className="text-xs">{label}</span>
+            <button
+              aria-label={`Remover ${item} selecao`}
+              aria-roledescription="botao para remover selecao"
+              type="button"
+              onMouseDown={mousePreventDefault}
+              onClick={() => onValueChange(item)}
+            >
+              <span className="sr-only">Remover {label}</span>
+              <RemoveIcon className="h-4 w-4 hover:stroke-destructive" />
+            </button>
+          </Badge>
+        )
+      })}
       {children}
     </div>
   );

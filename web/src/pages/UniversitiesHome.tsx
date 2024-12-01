@@ -242,7 +242,7 @@ export default function UniversitiesHomePage() {
           <Accordion type="single" collapsible>
             {
               universities!.map((u) => (
-                <AccordionItem value={`university-${u.identifier}`} key={`university-${u.identifier}`}>
+                <AccordionItem value={`university-${u.id}`} key={`university-${u.id}`}>
                   <AccordionTrigger>{u.name}</AccordionTrigger>
                   <AccordionContent>
                     <pre>{JSON.stringify(u, null, 2)}</pre>

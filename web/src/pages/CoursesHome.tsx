@@ -58,11 +58,6 @@ const CreateCourseSchema = z.object({
 type Course = z.infer<typeof CreateCourseSchema>
 
 async function fetchCourses(): Promise<Course[]> {
-  const random = Math.random() * 10
-  console.info("random", random)
-  if (random > 7)
-    throw new Error("erro shjdkashkjdhkjash kjdhkj")
-
   await new Promise(resolve => setTimeout(resolve, 2000))
   return []
 }
@@ -122,6 +117,8 @@ export default function CoursesHomePage() {
 
     setDialogOpen(value)
   }
+
+  const universities = queryClient.getQueryData(["universities"])
 
   return (
     <main className="p-5">
@@ -210,15 +207,16 @@ export default function CoursesHomePage() {
                         <MultiSelector
                           onValuesChange={field.onChange}
                           values={field.value}
+                          getLabel={(value) => universities.find(uni => uni.id === value).name}
                         >
                           <MultiSelectorTrigger>
                             <MultiSelectorInput placeholder="Selecione universidades" />
                           </MultiSelectorTrigger>
                           <MultiSelectorContent>
                             <MultiSelectorList>
-                              {(["Jaragua do Sul - Rau", "Jaragua do Sul - Centro", "Joinville - Centro"]).map((uni) => (
-                                <MultiSelectorItem key={uni} value={uni}>
-                                  <span>{uni}</span>
+                              {universities.map((uni) => (
+                                <MultiSelectorItem key={uni.id} value={uni.id}>
+                                  {uni.name}
                                 </MultiSelectorItem>
                               ))}
                             </MultiSelectorList>
