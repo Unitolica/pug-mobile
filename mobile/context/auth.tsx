@@ -25,7 +25,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         email: "gabriel04.roch@catolicasc.edu.br"
       }
   );
-  const [isLoggedIn, setIsLoggedIn] = useState(false) ;
+  const [isLoggedIn, setIsLoggedIn] = useState(true) ;
 
   async function login (email: string, password: string) {
     try {

@@ -1,102 +1,117 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { StyleSheet, Image, Platform } from 'react-native';
+import { Image, StyleSheet, TextInput, View, StatusBar, ScrollView } from 'react-native';
 
-import { Collapsible } from '@/components/Collapsible';
-import { ExternalLink } from '@/components/ExternalLink';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 
-export default function TabTwoScreen() {
+export default function UserProfileScreen() {
+  const user = {
+    name: 'Roberto Bezerra',
+    cpf: '123.456.789-00',
+    matricula: '202345678',
+    address: 'Rua Exemplo, 123, Bairro Central, Cidade Exemplo - Estado',
+    accumulatedHours: 128.5,
+    observation: 'Usuário dedicado e sempre pontual.',
+    profileImage: require('@/assets/images/profile-picture.png'),
+    quote: '"Loren epsen."',
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-      headerImage={<Ionicons size={310} name="code-slash" style={styles.headerImage} />}>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Explore</ThemedText>
-      </ThemedView>
-      <ThemedText>This app includes example code to help you get started.</ThemedText>
-      <Collapsible title="File-based routing">
-        <ThemedText>
-          This app has two screens:{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/explore.tsx</ThemedText>
-        </ThemedText>
-        <ThemedText>
-          The layout file in <ThemedText type="defaultSemiBold">app/(tabs)/_layout.tsx</ThemedText>{' '}
-          sets up the tab navigator.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/router/introduction">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Android, iOS, and web support">
-        <ThemedText>
-          You can open this project on Android, iOS, and the web. To open the web version, press{' '}
-          <ThemedText type="defaultSemiBold">w</ThemedText> in the terminal running this project.
-        </ThemedText>
-      </Collapsible>
-      <Collapsible title="Images">
-        <ThemedText>
-          For static images, you can use the <ThemedText type="defaultSemiBold">@2x</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">@3x</ThemedText> suffixes to provide files for
-          different screen densities
-        </ThemedText>
-        <Image source={require('@/assets/images/react-logo.png')} style={{ alignSelf: 'center' }} />
-        <ExternalLink href="https://reactnative.dev/docs/images">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Custom fonts">
-        <ThemedText>
-          Open <ThemedText type="defaultSemiBold">app/_layout.tsx</ThemedText> to see how to load{' '}
-          <ThemedText style={{ fontFamily: 'SpaceMono' }}>
-            custom fonts such as this one.
+    <>
+      <StatusBar hidden />
+      <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.header}>
+          <Image source={user.profileImage} style={styles.profileImage} />
+          <ThemedText type="subtitle" style={styles.quote}>
+            {user.quote}
           </ThemedText>
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/versions/latest/sdk/font">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Light and dark mode components">
-        <ThemedText>
-          This template has light and dark mode support. The{' '}
-          <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook lets you inspect
-          what the user's current color scheme is, and so you can adjust UI colors accordingly.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Animations">
-        <ThemedText>
-          This template includes an example of an animated component. The{' '}
-          <ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> component uses
-          the powerful <ThemedText type="defaultSemiBold">react-native-reanimated</ThemedText> library
-          to create a waving hand animation.
-        </ThemedText>
-        {Platform.select({
-          ios: (
-            <ThemedText>
-              The <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
-              component provides a parallax effect for the header image.
-            </ThemedText>
-          ),
-        })}
-      </Collapsible>
-    </ParallaxScrollView>
+        </View>
+
+        <View style={styles.infoSection}>
+          <ThemedText style={styles.infoLabel}>Nome:</ThemedText>
+          <ThemedText style={styles.infoValue}>{user.name}</ThemedText>
+
+          <ThemedText style={styles.infoLabel}>CPF:</ThemedText>
+          <ThemedText style={styles.infoValue}>{user.cpf}</ThemedText>
+
+          <ThemedText style={styles.infoLabel}>Matrícula:</ThemedText>
+          <ThemedText style={styles.infoValue}>{user.matricula}</ThemedText>
+
+          <ThemedText style={styles.infoLabel}>Endereço:</ThemedText>
+          <ThemedText style={styles.infoValue}>{user.address}</ThemedText>
+
+          <ThemedText style={styles.infoLabel}>Horas Acumuladas:</ThemedText>
+          <ThemedText style={styles.infoValue}>{user.accumulatedHours}h</ThemedText>
+        </View>
+      </ScrollView>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  headerImage: {
-    color: '#808080',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
+  container: {
+    padding: 50,
+    backgroundColor: '#ffffff',
+    flexGrow: 3, 
   },
-  titleContainer: {
-    flexDirection: 'row',
-    gap: 8,
+  header: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  profileImage: {
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: '#e0e0e0',
+    marginBottom: 12,
+  },
+  quote: {
+    fontSize: 16,
+    fontStyle: 'italic',
+    color: '#666666',
+    textAlign: 'center',
+  },
+  infoSection: {
+    marginVertical: 20,
+    paddingHorizontal: 10,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  infoLabel: {
+    fontSize: 16,
+    color: '#555555',
+    marginBottom: 4,
+  },
+  infoValue: {
+    fontSize: 18,
+    color: '#000000',
+    fontWeight: '500',
+    marginBottom: 12,
+  },
+  
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333333',
+    marginBottom: 12,
+  },
+  textInput: {
+    backgroundColor: '#f1f1f1',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    color: '#333333',
+    height: 120,
+    textAlignVertical: 'top',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
 });
