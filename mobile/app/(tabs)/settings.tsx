@@ -2,18 +2,10 @@ import { Image, StyleSheet, TextInput, View, StatusBar, ScrollView } from 'react
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { useAuth } from '@/context/auth';
 
 export default function UserProfileScreen() {
-  const user = {
-    name: 'Roberto Bezerra',
-    cpf: '123.456.789-00',
-    matricula: '202345678',
-    address: 'Rua Exemplo, 123, Bairro Central, Cidade Exemplo - Estado',
-    accumulatedHours: 128.5,
-    observation: 'Usuário dedicado e sempre pontual.',
-    profileImage: require('@/assets/images/profile-picture.png'),
-    quote: '"Loren epsen."',
-  };
+  const { user } = useAuth()
 
   return (
     <>
@@ -30,14 +22,8 @@ export default function UserProfileScreen() {
           <ThemedText style={styles.infoLabel}>Nome:</ThemedText>
           <ThemedText style={styles.infoValue}>{user.name}</ThemedText>
 
-          <ThemedText style={styles.infoLabel}>CPF:</ThemedText>
-          <ThemedText style={styles.infoValue}>{user.cpf}</ThemedText>
-
           <ThemedText style={styles.infoLabel}>Matrícula:</ThemedText>
-          <ThemedText style={styles.infoValue}>{user.matricula}</ThemedText>
-
-          <ThemedText style={styles.infoLabel}>Endereço:</ThemedText>
-          <ThemedText style={styles.infoValue}>{user.address}</ThemedText>
+          <ThemedText style={styles.infoValue}>{user.registration}</ThemedText>
 
           <ThemedText style={styles.infoLabel}>Horas Acumuladas:</ThemedText>
           <ThemedText style={styles.infoValue}>{user.accumulatedHours}h</ThemedText>

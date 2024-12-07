@@ -34,6 +34,8 @@ import { Input } from "@/components/ui/input";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Loader2Icon } from "lucide-react";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
+import { api } from "@/services/api";
+import { useToast } from "@/hooks/use-toast";
 
 const CreateStudentSchema = z.object({
   name: z.string({ required_error: "Nome obrigatório" }),
@@ -45,20 +47,12 @@ const CreateStudentSchema = z.object({
 
 type Student = z.infer<typeof CreateStudentSchema>
 
-async function registerStudent(student: Student) {
-  console.info("creating student", student)
-  await new Promise(resolve => setTimeout(resolve, 2000))
-}
-
-async function fetchStudents(): Promise<Student[]> {
-  await new Promise(resolve => setTimeout(resolve, 2000))
-  return []
-}
-
 export default function StudentsHomePage() {
   const queryClient = useQueryClient()
+  const { toast } = useToast()
 
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const courses = queryClient.getQueryData(["courses"]) as any
 
   const form = useForm<Student>({
     defaultValues: {
@@ -73,21 +67,31 @@ export default function StudentsHomePage() {
 
   const { data: students, isLoading } = useQuery({
     queryKey: ["students"],
-    queryFn: () => fetchStudents(),
+    queryFn: async () => {
+      const { data } = await api.get("/user?role=student")
+      return data
+    },
   })
 
   const { mutate: createUser, isPending } = useMutation({
-    mutationFn: registerStudent,
+    mutationFn: async (data: Student) => {
+      await api.post("/user", data)
+    },
     onSuccess: () => {
+      toast
       queryClient.setQueryData(["students"], (current: Student[]) => [...current, form.getValues()])
       setIsDialogOpen(false)
       form.reset()
+    },
+    onError: (error) => {
+      console.error("error while creating student", error)
+      toast({
+        title: "Falha!",
+        description: "Ocorreu um erro ao registrar o estudante, tente novamente mais tarde!",
+        variant: "destructive"
+      })
     }
   })
-
-  function onSubmit(data: Student) {
-    createUser(data);
-  }
 
   return (
     <section className="p-5">
@@ -107,13 +111,13 @@ export default function StudentsHomePage() {
             </DialogHeader>
 
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form onSubmit={form.handleSubmit(createUser)} className="space-y-4">
                 <FormField
                   control={form.control}
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nome</FormLabel>
+                      <FormLabel>Nome completo</FormLabel>
                       <FormControl>
                         <Input {...field} />
                       </FormControl>
@@ -145,6 +149,9 @@ export default function StudentsHomePage() {
                       <FormControl>
                         <Input type="password" {...field} />
                       </FormControl>
+                      <FormDescription>
+                        Essa senha será usada para o primeiro acesso do estudante.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -173,16 +180,19 @@ export default function StudentsHomePage() {
                       <MultiSelector
                         onValuesChange={field.onChange}
                         values={field.value}
-                        getLabel={(value) => [].find(uni => uni.id === value)?.name ?? ""}
+                        getLabel={(value) => {
+                          const course = courses.find(c => c.id === value)
+                          return `${course.name} - ${course.university.name}`
+                        }}
                       >
                         <MultiSelectorTrigger>
                           <MultiSelectorInput placeholder="Selecione curso(s)" />
                         </MultiSelectorTrigger>
                         <MultiSelectorContent>
                           <MultiSelectorList>
-                            {[].map((uni) => (
-                              <MultiSelectorItem key={uni.id} value={uni.id}>
-                                {uni.name}
+                            {courses.map((c) => (
+                              <MultiSelectorItem key={c.id} value={c.id}>
+                                {c.name} - {c.university.name}
                               </MultiSelectorItem>
                             ))}
                           </MultiSelectorList>

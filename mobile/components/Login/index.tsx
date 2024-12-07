@@ -21,7 +21,7 @@ import Lock from "@/assets/images/lock.svg";
 import Stundents from "@/assets/images/students.svg";
 
 export function Login() {
-  const { login } = useAuth()
+  const { login, isLoading } = useAuth()
 
   const { control, handleSubmit, formState: { errors } } = useForm();
 
@@ -91,7 +91,7 @@ export function Login() {
                   autoCapitalize="none"
                 />
               )}
-              name="name"
+              name="password"
               rules={{ required: "Insira uma senha valida" }}
             />
             {errors.name && <Text style={styles.errorText}>{errors.name.message as string}</Text>}
@@ -106,7 +106,11 @@ export function Login() {
             <View style={styles.loginButton}>
               <Pressable style={styles.pressable} onPress={handleSubmit(onSubmit)}>
                 <Text style={styles.loginButtonText}>
-                  Continuar
+                  {
+                    isLoading 
+                    ? "Carregando..."
+                    : "Continuar"
+                  }
                 </Text>
                 <Ionicons size={14} name="chevron-forward" color="white" />
               </Pressable>

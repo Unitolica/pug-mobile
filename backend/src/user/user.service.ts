@@ -4,6 +4,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { CryptService } from '../crypt/crypt.service';
 import errors from '../../res/consts';
+import { Role as UserRole } from "@prisma/client"
 
 @Injectable()
 export class UserService {
@@ -49,9 +50,18 @@ export class UserService {
     }
   }
 
-  async findAll() {
-    const response = await this.prisma.user.findMany();
-    return response;
+  async findAll(role?: string) {
+    const response = await this.prisma.user.findMany({
+      where: {
+        ...(role ? {
+          role: UserRole[role?.toUpperCase()]
+        } : {})
+      },
+    });
+    return response.map(user => {
+      delete user.password
+      return user
+    });
   }
 
   async findById(id: string) {

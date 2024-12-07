@@ -29,8 +29,9 @@ export class ProjectController {
   }
 
   @Get()
-  findAll(@Query('course') course: string) {
-    return this.projectService.findAll(course);
+  @Roles(Role.OWNER, Role.PROFESSOR, Role.STUDENT)
+findAll(@Query('course') course: string, @Query('q') q: string, @Request() req: any) {
+    return this.projectService.findAll({ user: req.user, course, q });
   }
 
   @Get(':id')

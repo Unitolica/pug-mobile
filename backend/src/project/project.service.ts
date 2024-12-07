@@ -4,6 +4,7 @@ import { UpdateProjectDto } from './dto/update-project.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import  errors  from '../../res/consts';
 import { Role } from 'src/auth/res/roles.enum';
+import { User } from '@prisma/client';
 
 @Injectable()
 export class ProjectService {
@@ -48,19 +49,45 @@ export class ProjectService {
     // TODO: implementar
   }
 
-  async findAll(course?: string) {
+  async findAll({ user, course, q }: { course?: string, q?: string, user: User }) {
     return this.prisma.project.findMany({
       where: {
-        ...(course ? {
+      AND: [
+        // Course filter
+        course ? {
           CoursesOnProjects: {
             some: {
               courseId: course
             }
           }
-        } : {})
-      }
-    });
-  }
+        } : {},
+        
+        // Student role filter
+        user.role === Role.STUDENT ? {
+          CoursesOnProjects: {
+            some: {
+              course: {
+                UserOnCourses: {
+                  some: {
+                    userId: user.id
+                  }
+                },
+              }
+            }
+          }
+        } : {},
+        
+        // Search filter
+        q ? {
+          OR: [
+            { name: { contains: q } },
+            { description: { contains: q } }
+          ]
+        } : {}
+      ]
+    }
+  });
+}
 
   async findOne(id: string, user: any) {
     if (user.role != Role.ADMIN && !user.projects.some((project) => project.id == response.id)) {
