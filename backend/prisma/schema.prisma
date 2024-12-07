@@ -14,20 +14,19 @@ datasource db {
 }
 
 model User {
-  id                 String               @id @default(uuid())
-  email              String               @unique
-  name               String?
-  password           String
-  role               Role                 @default(STUDENT)
-  registration       String?              @default("")
-  requestedTimeLogs  TimeLog[]            @relation("requestedBy")
-  approvedTimeLogs   TimeLog[]            @relation("approvedBy")
-  deniedTimeLogs     TimeLog[]            @relation("deniedBy")
-  UserOnCourses      UserOnCourses[]
-  UserOnUniversities UserOnUniversities[]
-  UsersOnProjects    UsersOnProjects[]
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime             @updatedAt
+  id                String            @id @default(uuid())
+  email             String            @unique
+  name              String?
+  password          String
+  role              Role              @default(STUDENT)
+  registration      String?           @default("")
+  requestedTimeLogs TimeLog[]         @relation("requestedBy")
+  approvedTimeLogs  TimeLog[]         @relation("approvedBy")
+  deniedTimeLogs    TimeLog[]         @relation("deniedBy")
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  UserOnCourses     UserOnCourses[]
+  UsersOnProjects   UsersOnProjects[]
 
   @@map("users")
 }
@@ -40,47 +39,32 @@ enum Role {
 }
 
 model University {
-  id                     String                   @id
-  name                   String
-  description            String?
-  internalobs            String?
-  UniversitiesOnCourses  UniversitiesOnCourses[]
-  UserOnUniversities     UserOnUniversities[]
-  UniversitiesOnProjects UniversitiesOnProjects[]
-  createdAt              DateTime                 @default(now())
-  updatedAt              DateTime                 @updatedAt
+  id                  String   @id
+  name                String
+  description         String?
+  internalobs         String?
+  UniversitiesCourses Course[]
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   @@map("universities")
 }
 
-model UserOnUniversities {
-  university   University @relation(fields: [universityId], references: [id])
-  universityId String
-  user         User       @relation(fields: [userId], references: [id])
-  userId       String
-
-  @@id([universityId, userId])
-}
-
 model Course {
-  id                    String                  @id @default(uuid())
-  name                  String?
-  UniversitiesOnCourses UniversitiesOnCourses[]
-  UserOnCourses         UserOnCourses[]
-  CoursesOnProjects     CoursesOnProjects[]
-  createdAt             DateTime                @default(now())
-  updatedAt             DateTime                @updatedAt
+  id          String   @id @default(uuid())
+  name        String?
+  abreviation String
+  internalobs String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  universityId String
+  university   University @relation(fields: [universityId], references: [id])
+
+  UserOnCourses     UserOnCourses[]
+  CoursesOnProjects CoursesOnProjects[]
 
   @@map("courses")
-}
-
-model UniversitiesOnCourses {
-  course       Course     @relation(fields: [courseId], references: [id])
-  courseId     String
-  university   University @relation(fields: [universityId], references: [id])
-  universityId String
-
-  @@id([courseId, universityId])
 }
 
 model UserOnCourses {
@@ -93,15 +77,15 @@ model UserOnCourses {
 }
 
 model Project {
-  id                     String                   @id @default(uuid())
-  name                   String?
-  description            String?
-  timeLog                TimeLog[]
-  CoursesOnProjects      CoursesOnProjects[]
-  UsersOnProjects        UsersOnProjects[]
-  UniversitiesOnProjects UniversitiesOnProjects[]
-  createdAt              DateTime                 @default(now())
-  updatedAt              DateTime                 @updatedAt
+  id                String              @id @default(uuid())
+  name              String?
+  description       String?
+  hours             Int
+  timeLog           TimeLog[]
+  CoursesOnProjects CoursesOnProjects[]
+  UsersOnProjects   UsersOnProjects[]
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
 
   @@map("projects")
 }
@@ -124,29 +108,25 @@ model UsersOnProjects {
   @@id([userId, projectId])
 }
 
-model UniversitiesOnProjects {
-  university   University @relation(fields: [universityId], references: [id])
-  universityId String
-  project      Project    @relation(fields: [projectId], references: [id])
-  projectId    String
-
-  @@id([universityId, projectId])
-}
-
 model TimeLog {
   id              String   @id @default(uuid())
   description     String?
   geolocalization String?
-  requestedBy     User?    @relation("requestedBy", fields: [requestedById], references: [id])
-  approvedBy      User?    @relation("approvedBy", fields: [approvedById], references: [id])
-  deniedBy        User?    @relation("deniedBy", fields: [deniedById], references: [id])
-  project         Project? @relation(fields: [projectId], references: [id])
-  projectId       String?
-  requestedById   String?
-  approvedById    String?
-  deniedById      String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  init            DateTime
+  end             DateTime
+
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id])
+
+  requestedById String?
+  approvedById  String?
+  deniedById    String?
+  requestedBy   User?   @relation("requestedBy", fields: [requestedById], references: [id])
+  approvedBy    User?   @relation("approvedBy", fields: [approvedById], references: [id])
+  deniedBy      User?   @relation("deniedBy", fields: [deniedById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("timeLogs")
 }

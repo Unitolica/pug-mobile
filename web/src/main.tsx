@@ -16,8 +16,8 @@ import CoursesHomePage from "./pages/CoursesHome.tsx"
 import CoursesDetailPage from "./pages/CoursesDetail.tsx"
 import UniversitiesPage from "./pages/Universities.tsx"
 import UniversitiesHomePage from "./pages/UniversitiesHome.tsx"
-import PartnersPage from "./pages/Partners.tsx"
-import PartnersHomePage from "./pages/PartnersHome.tsx"
+import StudentsPage from "./pages/Students.tsx"
+import StudentsHomePage from "./pages/StudentsHome.tsx"
 import { AuthProvider } from "./contexts/auth-context.tsx"
 
 const queryClient = new QueryClient()
@@ -45,8 +45,8 @@ createRoot(document.getElementById("root")!).render(
             <Route path=":cslug" element={<CoursesDetailPage />} />
           </Route>
 
-          <Route path="parceiros" element={<PartnersPage />} >
-            <Route index element={<PartnersHomePage />} />
+          <Route path="estudantes" element={<StudentsPage />} >
+            <Route index element={<StudentsHomePage />} />
           </Route>
 
           <Route path="universidades" element={<UniversitiesPage />} >

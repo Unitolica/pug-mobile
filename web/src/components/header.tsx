@@ -23,21 +23,21 @@ export function Header() {
         </NavLink>
 
         <NavLink
+          to="/estudantes"
+          className={({ isActive }) =>
+            isActive ? "font-bold underline" : ""
+          }
+        >
+          Estudantes
+        </NavLink>
+
+        <NavLink
           to="/cursos"
           className={({ isActive }) =>
             isActive ? "font-bold underline" : ""
           }
         >
           Cursos
-        </NavLink>
-
-        <NavLink
-          to="/parceiros"
-          className={({ isActive }) =>
-            isActive ? "font-bold underline" : ""
-          }
-        >
-          Parceiros
         </NavLink>
 
         <NavLink

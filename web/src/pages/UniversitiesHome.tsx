@@ -45,7 +45,7 @@ const CreateUniversitySchema = z.object({
   internalobs: z.string().optional(),
 })
 
-type University = z.infer<typeof CreateUniversitySchema>
+export type University = z.infer<typeof CreateUniversitySchema>
 
 async function fetchUniversities(): Promise<University[]> {
   const { data } = await api.get("/university")

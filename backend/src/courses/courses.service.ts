@@ -11,37 +11,37 @@ export class CoursesService {
 
   async create(createCourseDto: CreateCourseDto) {
     try {
-      const response = await this.prisma.course.create({
-        data: {
-          name: createCourseDto.name
+      await this.prisma.course.createMany({
+        data: createCourseDto.universities.map((universityId: string) => {
+          return {
+            name: createCourseDto.name,
+            abreviation: createCourseDto.abreviation,
+            internalobs: createCourseDto.internalobs,
+            universityId
         }
+        }),
       })
-      const universityErrors = [];
-      createCourseDto.universities.forEach(async (universityId) => {
-        try{
-          await this.universityService.addCourse(universityId, response.id);
-        } catch (error) {
-          universityErrors.push(universityId);
-        }
-      });
-      if (universityErrors.length > 0) {
-        throw { statusCode: 500, internalCode: 1, message: errors[1], errors: universityErrors }
-      }
-      return { response, message: "Created" };
+
+      return { message: "created" };
     } catch (error) {
+      console.error("error while creating course", error)
       throw {  statusCode: 500, message: 'Internal Server Error' }
     }
   }
 
   async findAll() {
-    const response = await this.prisma.course.findMany();
+    const response = await this.prisma.course.findMany({
+      include: {
+        university: true
+      }
+    });
     return response;
   }
 
   async findOne(id: string) {
     const response = await this.prisma.course.findUnique({
-      where: { 
-        id, 
+      where: {
+        id,
       },
     });
 
@@ -53,35 +53,13 @@ export class CoursesService {
   }
 
   async update(id: string, updateCourseDto: UpdateCourseDto) {
-    try{
-    const response = await this.prisma.course.update({
-      where: { id },
-      data: {
-        name: updateCourseDto.name
-      },
-    });
-    const universityErrors = [];
-    const deleted = await this.prisma.universitiesOnCourses.deleteMany({where: {courseId: id}});
-    updateCourseDto.universities.forEach(async (universityId) => {
-      try{
-        await this.universityService.addCourse(universityId, response.id);
-      } catch (error) {
-        universityErrors.push(universityId);
-      }
-    });
-    if (universityErrors.length > 0) {
-      throw { statusCode: 500, internalCode: 1, message: errors[1], errors: universityErrors }
-    }
-    return { response, message: "Updated" };
-    } catch (error) {
-      throw {  statusCode: 500, message: 'Internal Server Error' }
-    }
+    // TODO: implementar
   }
 
   async findById(id: string) {
     const response = await this.prisma.user.findUnique({
-      where: { 
-        id, 
+      where: {
+        id,
       },
     });
 

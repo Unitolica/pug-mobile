@@ -2,7 +2,7 @@ import { Header } from "@/components/header";
 import { ProtectedRoute } from "@/components/protected-route";
 import { Outlet } from "react-router-dom";
 
-export default function PartnersPage () {
+export default function StudentsPage () {
   return (
     <ProtectedRoute>
       <Header />

@@ -2,7 +2,7 @@ import { useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { useQueryClient, useQuery } from "@tanstack/react-query"
+import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query"
 import { Loader2Icon } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button";
@@ -40,15 +40,14 @@ import {
   MultiSelectorList,
   MultiSelectorTrigger,
 } from "@/components/ui/multi-select";
+import { University } from "./UniversitiesHome"
+import { api } from "@/services/api"
 
 const CreateCourseSchema = z.object({
-  identifier: z.string({ required_error: "Identificador unico eh requirido" }).min(3, {
-    message: "Identificador deve conter no minimo 3 caracteres"
-  }),
   name: z.string({ required_error: "Nome do curso eh requirido" }).min(7, {
     message: "Nome do curso deve conter no minimo 7 caracteres"
   }),
-  acronym: z.string({ required_error: "Sigla do curso eh requirida" }).min(3, {
+  abreviation: z.string({ required_error: "Abreviação do curso eh requirida" }).min(3, {
     message: "Sigla do curso deve conter no minimo 3 caracteres"
   }),
   internalobs: z.string().optional(),
@@ -57,59 +56,58 @@ const CreateCourseSchema = z.object({
 
 type Course = z.infer<typeof CreateCourseSchema>
 
-async function fetchCourses(): Promise<Course[]> {
-  await new Promise(resolve => setTimeout(resolve, 2000))
-  return []
-}
-
 export default function CoursesHomePage() {
   const queryClient = useQueryClient()
-
-  const { data: courses, isPending: isCoursesFetchPending, isError: isCoursesFetchError, error } = useQuery<Course[]>({
-    queryKey: ["courses"],
-    queryFn: () => fetchCourses(),
-    retry: false
-  })
 
   const form = useForm<z.infer<typeof CreateCourseSchema>>({
     resolver: zodResolver(CreateCourseSchema),
     defaultValues: {
-      identifier: "",
       name: "",
-      acronym: "",
+      abreviation: "",
       internalobs: "",
       universities: []
     }
   })
 
-  const [isSubmitLoading, setIsSubmitLoading] = useState(false)
+  const { data: courses, isLoading, isError, error } = useQuery<Course[]>({
+    queryKey: ["courses"],
+    queryFn: async () => {
+      const { data } = await api.get("/courses")
+      return data
+    },
+  })
+
+  const { isPending, mutate: createCourse } = useMutation({
+    mutationFn: async (formData: Course) => {
+      await api.post("/courses", formData)
+    },
+    onSuccess: () => {
+      toast({
+        itemID: "create-course",
+        variant: "success",
+        title: "Sucesso",
+        description: "Curso criado com sucesso e ja disponivel na listagem",
+      })
+
+      queryClient.invalidateQueries({
+        queryKey: ["courses"]
+      })
+
+      form.reset()
+      setDialogOpen(false)
+    },
+    onError: (error) => {
+      console.error("error while creating course", error)
+      toast({
+        itemID: "create-course",
+        variant: "destructive",
+        title: "Falha!",
+        description: "Ocorreu um erro ao registrar o curso, tente novamente mais tarde!",
+      })
+    }
+  })
+
   const [drawerOpen, setDialogOpen] = useState(false)
-
-  async function onSubmit(formData: Course) {
-    setIsSubmitLoading(true)
-    toast({
-      itemID: "create-course",
-      title: "Usando os seguintes valores: ",
-      description: (
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(formData, null, 2)}</code>
-        </pre>
-      ),
-    })
-
-    await new Promise(resolve => setTimeout(resolve, 2000))
-
-    toast({
-      itemID: "create-course",
-      variant: "success",
-      title: "Sucesso",
-      description: "Curso criado com sucesso e ja disponivel na listagem",
-    })
-    setIsSubmitLoading(false)
-    setDialogOpen(false)
-
-    queryClient.setQueryData(["courses"], (current: Course[]) => [...current, formData])
-  }
 
   function toggleDialog(value: boolean) {
     if (!value)
@@ -118,7 +116,7 @@ export default function CoursesHomePage() {
     setDialogOpen(value)
   }
 
-  const universities = queryClient.getQueryData(["universities"])
+  const universities = queryClient.getQueryData(["universities"]) as University[]
 
   return (
     <main className="p-5">
@@ -140,33 +138,7 @@ export default function CoursesHomePage() {
 
             <section className="flex flex-col justify-start w-full">
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-6">
-                  <FormField
-                    control={form.control}
-                    name="identifier"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Indetificador Unico</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="eng-software"
-                            {...field}
-                            onChange={(e) => {
-                              const transformedValue = e.target.value
-                                .toLowerCase()
-                                .replace(/\s+/g, "-");
-                              field.onChange(transformedValue);
-                            }}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Informe um texto sem espacos
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
+                <form onSubmit={form.handleSubmit(createCourse)} className="w-full space-y-6">
                   <FormField
                     control={form.control}
                     name="name"
@@ -183,16 +155,13 @@ export default function CoursesHomePage() {
 
                   <FormField
                     control={form.control}
-                    name="acronym"
+                    name="abreviation"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Sigla do curso</FormLabel>
+                        <FormLabel>Abreviação do nome do curso</FormLabel>
                         <FormControl>
                           <Input placeholder="Eng. Soft" {...field} />
                         </FormControl>
-                        <FormDescription>
-                          Uma sigla para que, quando necessario, o nome do curso possa ser contraido
-                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -244,12 +213,12 @@ export default function CoursesHomePage() {
                     )}
                   />
                   <DialogFooter className="flex flex-row justify-end gap-5 w-full">
-                    <Button type="reset" variant="destructive" disabled={isSubmitLoading} onClick={() => toggleDialog(false)}>
+                    <Button type="reset" variant="destructive" disabled={isPending} onClick={() => toggleDialog(false)}>
                       Cancelar
                     </Button>
 
-                    <Button type="submit" disabled={isSubmitLoading}>
-                      {isSubmitLoading && <Loader2Icon className="animate-spin" />}
+                    <Button type="submit" disabled={isPending}>
+                      {isPending && <Loader2Icon className="animate-spin" />}
                       Criar
                     </Button>
                   </DialogFooter>
@@ -262,13 +231,13 @@ export default function CoursesHomePage() {
 
       <section className="w-full flex flex-col mt-5">
         {
-          isCoursesFetchPending && (
+          isLoading && (
             <Loader2Icon className="animate-spin" />
           )
         }
 
         {
-          isCoursesFetchError
+          isError
             ? (
               <>
                 <h1>Ocorreu um erro ao listar os cursos, tente novamente mais tarde!</h1>
@@ -278,9 +247,9 @@ export default function CoursesHomePage() {
               </>
             )
             : (
-              !isCoursesFetchPending && courses!.map(c => (
+              !isLoading && courses!.map(c => (
                 <Accordion type="single" collapsible>
-                  <AccordionItem value={c.identifier}>
+                  <AccordionItem value={c.id}>
                     <AccordionTrigger>{c.name}</AccordionTrigger>
                     <AccordionContent>
                       <pre>

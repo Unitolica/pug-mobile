@@ -11,12 +11,13 @@ export class CreateUserDto {
 
   @IsString()
   @IsNotEmpty()
+  registration: string;
+
+  @IsString()
+  @IsNotEmpty()
   name: string;
 
   @IsString({ each: true })
   @IsNotEmpty()
-  universities: string[];
-
-  @IsString({ each: true })
   courses: string[];
 }

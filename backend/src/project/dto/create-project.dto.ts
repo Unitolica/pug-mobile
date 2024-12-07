@@ -1,7 +1,6 @@
-import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsNumber, IsString } from 'class-validator';
 
 export class CreateProjectDto {
-
     @IsString()
     @IsNotEmpty()
     name: string;
@@ -10,15 +9,11 @@ export class CreateProjectDto {
     @IsNotEmpty()
     description: string;
 
-    @IsString({each: true})
+    @IsNumber()
     @IsNotEmpty()
-    universities: string[];
+    hours: number;
 
     @IsString({each: true})
     @IsNotEmpty()
     courses: string[];
-
-    @IsString({each: true})
-    @IsNotEmpty()
-    users: string[];
 }

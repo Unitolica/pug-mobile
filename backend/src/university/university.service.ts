@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUniversityDto } from './dto/create-university.dto';
 import { UpdateUniversityDto } from './dto/update-university.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -24,20 +24,6 @@ export class UniversityService {
     }
   }
 
-  async addCourse(universityId: string, courseId: string) {
-    try {
-      const response = await this.prisma.universitiesOnCourses.create({
-        data: {
-          universityId,
-          courseId
-        }
-      });
-      return { message: "Course Added" };
-    } catch (error) {
-      throw { statusCode: 500, message: 'Erro ao adicionar curso!' }
-    }
-  }
-
   async findAll() {
     const response = await this.prisma.university.findMany();
     return response;
@@ -51,8 +37,9 @@ export class UniversityService {
     });
 
     if (!response) {
-      throw { statusCode: 404, message: "Not Found" }
+      throw new NotFoundException()
     }
+
     return response;
   }
 

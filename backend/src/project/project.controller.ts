@@ -1,4 +1,4 @@
-import { Request, Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Request, Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { ProjectService } from './project.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
@@ -24,12 +24,13 @@ export class ProjectController {
   @Get('all')
   @Roles(Role.OWNER, Role.PROFESSOR, Role.STUDENT)
   findMine(@Request() req) {
-    return this.projectService.findMine(req.user);
+    // return this.projectService.findMine(req.user);
+    return []
   }
 
   @Get()
-  findAll() {
-    return this.projectService.findAll();
+  findAll(@Query('course') course: string) {
+    return this.projectService.findAll(course);
   }
 
   @Get(':id')
