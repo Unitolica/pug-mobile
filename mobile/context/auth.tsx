@@ -104,7 +104,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   useEffect(() => {
     fetchMe();
-    const interval = setInterval(() => fetchMe(), 1000 * 30);
+    const interval = setInterval(() => fetchMe(), 1000 * 5);
     return () => clearInterval(interval);
   }, []);
 

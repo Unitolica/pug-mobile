@@ -43,11 +43,6 @@ export default function HomeScreen() {
       Alert.alert("Error", "Failed to finish activity");
     }
   });
-  
-
-  async function openFullHistory() {
-    console.info("Historico completo")
-  }
 
   async function refreshActivityState() {
     const activity = await ActivityManager.getCurrentActivity();
@@ -283,16 +278,10 @@ export default function HomeScreen() {
       {user!.requestedTimeLogs.length !== 0 && (
         <View style={styles.lastsHistoryWrapper}>
           {
-            user!.requestedTimeLogs.splice(0, 4).map(register => (
+            user!.requestedTimeLogs.map(register => (
               <HourRegisterComponent key={`${register.id}-${register.end}`} register={register} />
             ))
           }
-          <Pressable style={styles.openFullHistoryButton} onPress={openFullHistory}>
-            <Text style={styles.openFullHistoryText}>
-              Mostrar historico completo
-              <Ionicons name="chevron-forward" size={10} color="white" />
-            </Text>
-          </Pressable>
         </View>
       )}
     </ScrollView>
@@ -351,6 +340,7 @@ function HourRegisterComponent({ register }: { register: any }) {
     </View>
   )
 }
+
 
 const styles = StyleSheet.create({
   scrollViewContainer: {
@@ -428,23 +418,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.gray,
     borderRadius: 10,
     width: "90%",
-  },
-  openFullHistoryButton: {
-    marginTop: 10,
-    marginHorizontal: "auto",
-    padding: 10,
-    borderRadius: 50,
-    backgroundColor: Colors.light.primary,
-    width: "100%",
-    alignItems: "center",
-  },
-  openFullHistoryText: {
-    color: "white",
-    fontSize: 14,
-    paddingHorizontal: 5,
-    justifyContent: "center",
-    alignItems: "center",
-    flexDirection: "column",
   },
   disabledButton: {
     opacity: 0.5
@@ -550,5 +523,20 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     alignSelf: 'flex-start',
     marginLeft: '5%',
+  },
+  historyScrollView: {
+    flex: 1,
+    width: '100%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  closeButton: {
+    padding: 8,
   },
 });
