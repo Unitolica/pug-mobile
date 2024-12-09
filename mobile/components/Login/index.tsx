@@ -25,9 +25,16 @@ export function Login() {
 
   const { control, handleSubmit, formState: { errors } } = useForm();
 
-  async function onSubmit(data) {
-    await login(data.email, data.password)
-  };
+  async function onSubmit(data: { email: string, password: string }) {
+    try {
+      await login(data.email, data.password);
+    } catch (error) {
+      Alert.alert(
+        "Erro ao fazer login",
+        "Não foi possível fazer login. Verifique as informações e tente novamente.",
+      );
+    }
+  }
 
   function forgotPassword() {
     Alert.alert(
@@ -112,7 +119,12 @@ export function Login() {
                     : "Continuar"
                   }
                 </Text>
+                {!isLoading 
+                ? (
                 <Ionicons size={14} name="chevron-forward" color="white" />
+                )
+                : null
+                }
               </Pressable>
             </View>
           </View>
@@ -213,4 +225,5 @@ const styles = StyleSheet.create({
     color: "white",
   },
 })
+
 

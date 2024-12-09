@@ -4,7 +4,7 @@ import { UpdateProjectDto } from './dto/update-project.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import  errors  from '../../res/consts';
 import { Role } from 'src/auth/res/roles.enum';
-import { User } from '@prisma/client';
+import { User, UserProjectStatus } from '@prisma/client';
 
 @Injectable()
 export class ProjectService {
@@ -27,11 +27,147 @@ export class ProjectService {
       if (error.code === 'P2002'){
         throw {  statusCode: 409, internalCode: 0, message: errors[0] }
       }
-      
+
       throw {  statusCode: 500, message: 'Erro ao Cadastrar Projeto!'}
     }
   }
 
+  async getRequestLinkStatus(projectId: string, user: any) {
+    const response = await this.prisma.usersOnProjects.findFirst({
+      where: {
+        userId: user.id,
+        projectId: projectId,
+      }
+    });
+
+    if (!response) {
+      return { status: null }
+    }
+
+    return { status: response.status };
+  }
+
+  async requestLink(projectId: string, user: any) {
+    try {
+      await this.prisma.usersOnProjects.upsert({
+        where: {
+          userId_projectId: {
+            projectId: projectId,
+            userId: user.id as string
+          },
+          status: {
+            notIn: [UserProjectStatus.ACCEPTED, UserProjectStatus.REJECTED]
+          }
+        },
+        update: {
+          status: UserProjectStatus.REQUESTED
+        },
+        create: {
+          userId: user.id,
+          projectId: projectId,
+          status: UserProjectStatus.REQUESTED
+        }
+      })
+
+      return { message: "ok" }
+    } catch (error) {
+      throw { statusCode: 500, message: 'Internal Server Error' }
+    }
+  }
+
+  async respondLinkRequest({ userId, projectId, response }: { projectId: string, userId: string, response: "ACCEPTED" | "REJECTED" }) {
+    try {
+      await this.prisma.usersOnProjects.update({
+        where: {
+          userId_projectId: {
+            projectId,
+            userId,
+          }
+        },
+        data: {
+          status: UserProjectStatus[response]
+        }
+      })
+
+      return { message: "ok" }
+    } catch (error) {
+      console.error("error while responding link request", error)
+      throw { statusCode: 500, message: 'Internal Server Error' }
+    }
+  }
+
+  async findLinkRequests() {
+    const response = await this.prisma.usersOnProjects.findMany({
+      where: {
+        status: UserProjectStatus.REQUESTED
+      },
+      select: {
+        project: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            hours: true,
+          }
+        },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            registration: true,
+            UserOnCourses: {
+              select: {
+                course: {
+                  select: {
+                    name: true,
+                    abreviation: true,
+                    university: {
+                      select: {
+                        name: true,
+                        description: true,
+                      }
+                    }
+                  },
+                }
+              },
+            },
+          }
+        },
+      }
+    });
+
+    return response;
+  }
+
+  async registerActivity({ init, end, projectId, description }: { init: any, end: any, projectId: string, description: string }, user: any) {
+    try {
+      await this.prisma.timeLog.create({
+        data: {
+          init: new Date(init.timestamp),
+          end: new Date(end.timestamp),
+          requestedById: user.id,
+          approvedById: null,
+          description,
+          projectId,
+          geolocalization: JSON.stringify({
+            init: {
+              latitude: init.location.latitude,
+              longitude: init.location.longitude
+            },
+            end: {
+              latitude: end.location.latitude,
+              longitude: end.location.longitude
+            }
+          }),
+        }
+      })
+
+    } catch (error) {
+      console.error("error while registering activity", error)
+      throw { statusCode: 500, message: 'Internal Server Error' }
+    }
+  }
   async findAssigned(user: any) {
     const usersOnProjects = await this.prisma.usersOnProjects.findMany({
       where: {
@@ -52,42 +188,39 @@ export class ProjectService {
   async findAll({ user, course, q }: { course?: string, q?: string, user: User }) {
     return this.prisma.project.findMany({
       where: {
-      AND: [
-        // Course filter
-        course ? {
-          CoursesOnProjects: {
-            some: {
-              courseId: course
-            }
-          }
-        } : {},
-        
-        // Student role filter
-        user.role === Role.STUDENT ? {
-          CoursesOnProjects: {
-            some: {
-              course: {
-                UserOnCourses: {
-                  some: {
-                    userId: user.id
-                  }
-                },
+        AND: [
+          course ? {
+            CoursesOnProjects: {
+              some: {
+                courseId: course
               }
             }
-          }
-        } : {},
-        
-        // Search filter
-        q ? {
-          OR: [
-            { name: { contains: q } },
-            { description: { contains: q } }
-          ]
-        } : {}
-      ]
-    }
-  });
-}
+          } : {},
+
+          user.role === Role.STUDENT ? {
+            CoursesOnProjects: {
+              some: {
+                course: {
+                  UserOnCourses: {
+                    some: {
+                      userId: user.id
+                    }
+                  },
+                }
+              }
+            }
+          } : {},
+
+          q ? {
+            OR: [
+              { name: { contains: q } },
+              { description: { contains: q } }
+            ]
+          } : {}
+        ]
+      }
+    });
+  }
 
   async findOne(id: string, user: any) {
     if (user.role != Role.ADMIN && !user.projects.some((project) => project.id == response.id)) {
@@ -95,13 +228,13 @@ export class ProjectService {
     }
 
     const response = await this.prisma.project.findUnique({
-      where: { 
-        id, 
+      where: {
+        id,
       },
     });
 
     if (!response) {
-      throw { statusCode: 404 , message: "Not Found"}
+      throw { statusCode: 404, message: "Not Found" }
     }
 
     if (user.role == Role.STUDENT) {

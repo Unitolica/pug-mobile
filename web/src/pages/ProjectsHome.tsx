@@ -83,6 +83,42 @@ export default function ProjectsPage() {
     queryKey: ["projects", selectedCourse],
   })
 
+  const { data: linkRequests } = useQuery({
+    queryKey: ["link-requests"],
+    queryFn: async () => {
+      const { data } = await api.get("/project/link-requests")
+      return data
+    },
+    initialData: []
+  });
+
+  const respondLinkRequestMutation = useMutation({
+    mutationFn: async (data: { userId: string, projectId: string, response: "ACCEPTED" | "REJECTED" }) => {
+      await api.post("/project/respond-link-request", data)
+    },
+    onSuccess: () => {
+      toast({
+        itemID: "link-respond",
+        title: "Sucesso",
+        variant: "success",
+        description: "Solicitação de acesso foi respondida com sucesso",
+      })
+      queryClient.invalidateQueries({
+        queryKey: ["link-requests"]
+      })
+    },
+    onError: (error) =>{
+      console.error("error while responding to a link request", error)
+      toast({
+        itemID: "link-respond",
+        title: "Falha!",
+        description: "Ocorreu um erro ao responder a solicitação de acesso, tente novamente mais tarde!",
+        variant: "destructive"
+      })
+    },
+    retry: false
+  })
+
   const { isPending, mutate: createProject } = useMutation({
     mutationFn: async (data: Project) => {
       await api.post("/project", data)
@@ -92,7 +128,7 @@ export default function ProjectsPage() {
         title: "Sucesso",
         variant: "success",
         description: "Projeto criado com sucesso e ja disponivel na listagem",
-      })  
+      })
       queryClient.invalidateQueries({
         queryKey: ["projects"]
       })
@@ -166,7 +202,6 @@ export default function ProjectsPage() {
                         <FormLabel>Nome do projeto</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="Projeto de robotica"
                             {...field}
                           />
                         </FormControl>
@@ -204,7 +239,10 @@ export default function ProjectsPage() {
                         <MultiSelector
                           onValuesChange={field.onChange}
                           values={field.value}
-                          getLabel={(value) => courses.find(c => c.id === value).name}
+                          getLabel={(value) => {
+                            const c = courses.find(c => c.id === value)
+                            return `${c.name} - ${c.university.name}`
+                          }}
                         >
                           <MultiSelectorTrigger>
                             <MultiSelectorInput placeholder="Selecione os cursos" />
@@ -291,6 +329,45 @@ export default function ProjectsPage() {
 
       <main className="mt-5">
         <ProjectsTable data={projects} isLoading={isLoadingProjects} />
+
+        {
+          linkRequests.length > 0 && (
+            <div className="mt-5">
+              <h2 className="text-md py-3 font-bold">Solicitações de acesso</h2>
+              <div className="flex flex-col gap-5 mt-5">
+                {
+                  linkRequests.map(linkRequest => (
+                    <div key={linkRequest.id} className="flex flex-col gap-2 p-5 border border-zinc-600 rounded">
+                      <p><span className="font-bold">Estudante: </span> {linkRequest.user.name} - {linkRequest.user.email} - {linkRequest.user.registration}</p>
+                      <p><span className="font-bold">Projeto: </span>{linkRequest.project.name} - {linkRequest.project.hours} h</p>
+                      <p><span className="font-bold">Curso: </span>{linkRequest.user.UserOnCourses.map(({ course }) => `${course.name} - ${course.university.name}`).join(", ")}</p>
+                      <div className="mt-1">
+                        <p className="font-bold">Responder</p>
+
+                        <div className="flex flex-row gap-2">
+                          <Button
+                            className="bg-green-900"
+                            onClick={() => respondLinkRequestMutation.mutate({ projectId: linkRequest.project.id, userId: linkRequest.user.id, response: "ACCEPTED" })}
+                            disabled={respondLinkRequestMutation.isPending}
+                          >
+                            Aceitar
+                          </Button>
+                          <Button
+                            className="bg-red-800"
+                            onClick={() => respondLinkRequestMutation.mutate({ projectId: linkRequest.project.id, userId: linkRequest.user.id, response: "REJECTED" })}
+                            disabled={respondLinkRequestMutation.isPending}
+                          >
+                            Rejeitar
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                }
+              </div>
+            </div>
+          )
+        }
       </main>
     </section>
   )
@@ -313,7 +390,7 @@ function ProjectsTable({ data, isLoading }: { data?: Project[], isLoading: boole
     <div className="overflow-x-auto rounded border border-zinc-600">
       <Table className="min-w-full bg-white rounded">
         <TableCaption className="p-4 mt-0">
-          Listagem de projetos
+          Lista de projetos
         </TableCaption>
 
         <TableHeader>
@@ -344,7 +421,7 @@ function ProjectsTable({ data, isLoading }: { data?: Project[], isLoading: boole
               </TableCell>
 
               <TableCell className="px-2 py-2 w-1/4 text-center whitespace-no-wrap border-b border-gray-200">
-                {item.hours}
+                {item.hours} h
               </TableCell>
 
               <TableCell className="px-2 py-2 w-1/4 text-center whitespace-no-wrap border-b border-gray-200">

@@ -247,18 +247,19 @@ export default function CoursesHomePage() {
               </>
             )
             : (
-              !isLoading && courses!.map(c => (
-                <Accordion type="single" collapsible>
-                  <AccordionItem value={c.id}>
-                    <AccordionTrigger>{c.name}</AccordionTrigger>
-                    <AccordionContent>
-                      <pre>
-                        {JSON.stringify(c, null, 2)}
-                      </pre>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-              ))
+              <Accordion type="single" collapsible>
+                {!isLoading && courses!.map(c => (
+                    <AccordionItem value={c.id} key={c.id}>
+                      <AccordionTrigger>{c.name}</AccordionTrigger>
+                      <AccordionContent>
+                        <pre>
+                          {JSON.stringify(c, null, 2)}
+                        </pre>
+                      </AccordionContent>
+                </AccordionItem>
+                ))
+                }
+              </Accordion>
             )
 
         }

@@ -1,14 +1,15 @@
 import { useState, useMemo, useCallback } from "react";
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { View, StyleSheet, TextInput, Text, ScrollView, Platform } from 'react-native';
+import { View, StyleSheet, TextInput, Text, ScrollView, Platform, Modal, TouchableOpacity, Alert } from 'react-native';
 import { Colors } from "@/constants/Colors";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { api } from "@/services/api";
 import { useAuth } from "@/context/auth";
 
 export default function TabTwoScreen() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [selectedProject, setSelectedProject] = useState(null);
   let timeout;
 
   const handleSearch = useCallback((text: string) => {
@@ -23,16 +24,11 @@ export default function TabTwoScreen() {
 
   const { isLoading, data: projects, isError, error, refetch } = useQuery({
     queryFn: async () => {
-      try {
-        const { data } = await api(`/project?${debouncedSearch ? `q=${debouncedSearch}` : ""}`);
-        return data;
-      } catch (err) {
-        console.error("error on get projects", err.message, err)
-        throw err
-      }
+      const { data } = await api(`/project?${debouncedSearch ? `q=${debouncedSearch}` : ""}`);
+      return data;
     },
     queryKey: ["projects-explore", debouncedSearch],
-  })
+  });
 
   return (
     <View style={styles.viewContainer}>
@@ -44,11 +40,11 @@ export default function TabTwoScreen() {
           placeholder="Procurar projetos"
         />
         <View style={styles.iconsContainer}>
-        <Ionicons name="search" size={24} color="black" />
-          <Ionicons 
-            name="refresh" 
-            size={24} 
-            color="black" 
+          <Ionicons name="search" size={24} color="black" />
+          <Ionicons
+            name="refresh"
+            size={24}
+            color="black"
             onPress={() => refetch()}
             style={styles.refreshIcon}
           />
@@ -68,18 +64,27 @@ export default function TabTwoScreen() {
           </View>
         ) : (
           projects?.map((project, index) => (
-            <ProjectCard key={index} {...project} />
+            <TouchableOpacity key={index} onPress={() => setSelectedProject(project)}>
+              <ProjectCard {...project} />
+            </TouchableOpacity>
           ))
         )}
       </ScrollView>
+
+      {selectedProject && (
+        <ProjectDetailModal 
+          project={selectedProject} 
+          onClose={() => setSelectedProject(null)} 
+        />
+      )}
     </View>
   );
 }
 
 type ProjectCartProps = {
-  name: string
-  description: string
-  hours: number
+  name: string;
+  description: string;
+  hours: number;
 }
 
 function ProjectCard({ name, description, hours }: ProjectCartProps) {
@@ -91,6 +96,154 @@ function ProjectCard({ name, description, hours }: ProjectCartProps) {
     </View>
   )
 }
+
+type ProjectDetailModalProps = {
+  project: ProjectCartProps & { id: string };
+  onClose: () => void;
+}
+
+function ProjectDetailModal({ project, onClose }: ProjectDetailModalProps) {
+  const { data: linkStatus, isLoading } = useQuery({
+    queryKey: ["project-link-status", project.id],
+    queryFn: async () => {
+      const { data } = await api(`/project/${project.id}/request-link`);
+      return data.status;
+    },
+  });
+
+  const linkMutation = useMutation({
+    mutationFn: async () => {
+      await api.post(`/project/${project.id}/request-link`);
+    },
+    onSuccess: () => {
+      Alert.alert("Sucesso", "Sua solicitação foi enviada com sucesso.", [
+        { text: "OK", onPress: onClose },
+      ]);
+    },
+    onError: (error) => {
+      console.error("error while requesting acess to project", error)
+      Alert.alert("Falha", "Ocorreu um erro ao solicitar o acesso ao projeto. Tente novamente mais tarde.");
+    },
+    retry: false
+  });
+
+  const isRequested = linkStatus === "REQUESTED" || linkMutation.isSuccess;
+  const isAccepted = linkStatus === "ACCEPTED";
+  const isRejected = linkStatus === "REJECTED";
+
+  return (
+    <Modal
+      animationType="slide"
+      visible={true}
+      onRequestClose={onClose}
+    >
+      <View style={modalStyles.container}>
+        <TouchableOpacity onPress={onClose} style={modalStyles.closeButton}>
+          <Ionicons name="close" size={24} color="black" />
+        </TouchableOpacity>
+        
+        <View style={modalStyles.content}>
+          <Text style={modalStyles.title}>{project.name}</Text>
+          <Text style={modalStyles.description}>{project.description}</Text>
+          <Text style={modalStyles.hours}>Horas totais: {project.hours}</Text>
+          
+          {isAccepted ? (
+            <View style={[modalStyles.statusContainer, modalStyles.acceptedStatus]}>
+              <Text style={modalStyles.statusText}>Você já está vinculado a este projeto</Text>
+            </View>
+          ) : isRejected ? (
+            <View style={[modalStyles.statusContainer, modalStyles.rejectedStatus]}>
+              <Text style={modalStyles.statusText}>Sua solicitação foi rejeitada</Text>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={[
+                modalStyles.linkButton,
+                isRequested && modalStyles.disabledButton
+              ]}
+              onPress={() => linkMutation.mutate()}
+              disabled={isRequested || isLoading}
+            >
+              {isLoading || linkMutation.isPending ? (
+                <Text style={modalStyles.linkButtonText}>
+                  Carregando...
+                </Text>
+              ) : (
+                <Text style={modalStyles.linkButtonText}>
+                  {isRequested ? "Solicitação enviada" : "Solicitar acesso ao projeto"}
+                </Text>
+              )}
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+const modalStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: 'white',
+    paddingTop: Platform.OS === "android" ? 30 : 50,
+  },
+  closeButton: {
+    padding: 16,
+    alignSelf: 'flex-end',
+  },
+  content: {
+    padding: 16,
+    flex: 1,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  description: {
+    fontSize: 16,
+    marginBottom: 16,
+  },
+  hours: {
+    fontSize: 16,
+    marginBottom: 24,
+  },
+  linkButton: {
+    backgroundColor: Colors.light.primary,
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 'auto',
+    marginBottom: 24,
+  },
+  disabledButton: {
+    backgroundColor: '#ccc',
+  },
+  linkButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  statusContainer: {
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 'auto',
+    marginBottom: 24,
+  },
+  acceptedStatus: {
+    backgroundColor: '#4CAF50', // green
+  },
+  rejectedStatus: {
+    backgroundColor: '#F44336', // red
+  },
+  statusText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+});
+
 
 const projectStyles = StyleSheet.create({
   container: {

@@ -64,32 +64,68 @@ export class ActivityManager {
     }
   }
 
-  static async endActivity(location: { latitude: number; longitude: number }): Promise<boolean> {
+  static async endActivity(location: { latitude: number; longitude: number }): Promise<{
+    success: boolean;
+    data?: {
+      init: {
+        timestamp: number;
+        location: { latitude: number; longitude: number };
+      };
+      end: {
+        timestamp: number;
+        location: { latitude: number; longitude: number };
+      };
+    };
+  }> {
     const statement = await db.prepareAsync(`
       INSERT INTO time_logs
         (projectId, timestamp, latitude, longitude, registerType, init_id)
       VALUES
         ($projectId, $now, $lat, $long, $type, $initId)
-    `)
+    `);
+  
     try {
       const currentActivity = await this.getCurrentActivity();
       if (!currentActivity) {
         throw new Error('No activity to end');
       }
-
+  
+      const now = Date.now();
+  
       await statement.executeAsync({
         $projectId: currentActivity.initLog.projectId,
-        $now: Date.now(),
+        $now: now,
         $lat: location.latitude,
         $long: location.longitude,
         $type: 'end',
         $initId: currentActivity.initLog.id
       });
-
-      return true;
+  
+      return {
+        success: true,
+        data: {
+          init: {
+            timestamp: currentActivity.initLog.timestamp,
+            location: {
+              latitude: currentActivity.initLog.latitude,
+              longitude: currentActivity.initLog.longitude
+            }
+          },
+          end: {
+            timestamp: now,
+            location: {
+              latitude: location.latitude,
+              longitude: location.longitude
+            }
+          },
+        }
+      };
     } catch (error) {
       console.error('Error ending activity:', error);
-      return false;
+      return { success: false };
+    } finally {
+      await statement.finalizeAsync();
     }
   }
+  
 }

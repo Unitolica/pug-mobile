@@ -99,11 +99,17 @@ model CoursesOnProjects {
   @@id([courseId, projectId])
 }
 
+enum UserProjectStatus {
+  REQUESTED
+  ACCEPTED
+  REJECTED
+}
 model UsersOnProjects {
   user      User    @relation(fields: [userId], references: [id])
   userId    String
   project   Project @relation(fields: [projectId], references: [id])
   projectId String
+  status    UserProjectStatus
 
   @@id([userId, projectId])
 }

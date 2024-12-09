@@ -1,9 +1,17 @@
-import { Request, Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Request, Controller, Get, Post, Body, Patch, Param, Delete, Query, Req } from '@nestjs/common';
 import { ProjectService } from './project.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { Roles } from 'src/auth/roles.decorator';
 import { Role } from 'src/auth/res/roles.enum';
+
+type ActivityData = {
+  timestamp: number;
+  location: {
+    longitude: number;
+    latitude: number;
+  }
+}
 
 @Controller('project')
 export class ProjectController {
@@ -13,6 +21,36 @@ export class ProjectController {
   @Roles(Role.OWNER)
   create(@Body() createProjectDto: CreateProjectDto) {
     return this.projectService.create(createProjectDto);
+  }
+
+  @Post('/:id/request-link')
+  @Roles(Role.STUDENT)
+  requestLink(@Param('id') id: string, @Request() req: any) {
+    return this.projectService.requestLink(id, req.user);
+  }
+
+  @Get('/:id/request-link')
+  @Roles(Role.STUDENT)
+  getRequestLinkStatus(@Param('id') projectId: string, @Request() req: any) {
+    return this.projectService.getRequestLinkStatus(projectId, req.user);
+  }
+
+  @Post('/respond-link-request')
+  @Roles(Role.PROFESSOR, Role.ADMIN)
+  respondLinkRequest(@Body() respondLinkRequestDto: { userId: string, projectId: string, response: "ACCEPTED" | "REJECTED" }, @Request() req: any) {
+    return this.projectService.respondLinkRequest(respondLinkRequestDto);
+  };
+
+  @Get('/link-requests')
+  @Roles(Role.PROFESSOR, Role.ADMIN)
+  findLinkRequests() {
+    return this.projectService.findLinkRequests();
+  }
+
+  @Post('/activity')
+  @Roles(Role.STUDENT)
+  registerActivity(@Body() registerActivityDto: { init: ActivityData, end: ActivityData, projectId: string, description: string }, @Request() req) {
+    return this.projectService.registerActivity(registerActivityDto, req.user);
   }
 
   @Get('assigned')

@@ -4,7 +4,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { CryptService } from '../crypt/crypt.service';
 import errors from '../../res/consts';
-import { Role as UserRole } from "@prisma/client"
+import { UserProjectStatus, Role as UserRole } from "@prisma/client"
 
 @Injectable()
 export class UserService {
@@ -80,7 +80,29 @@ export class UserService {
           }
         },
         UsersOnProjects: {
+          where: {
+            status: UserProjectStatus.ACCEPTED
+          },
           include: {
+            project: {
+              include: {
+                CoursesOnProjects: {
+                  include: {
+                    course: {
+                      include: {
+                        university: true
+                      }
+                    }
+                  }
+                }
+              }
+            },
+          }
+        },
+        requestedTimeLogs: {
+          include: {
+            deniedBy: true,
+            approvedBy: true,
             project: true
           }
         }
@@ -88,6 +110,18 @@ export class UserService {
     });
 
     delete response.password
+
+    const hours = await this.prisma.timeLog.findMany({
+      where: {
+        projectId: {
+          in: response.UsersOnProjects.map(({ project }) => project.id)
+        },
+        init: {
+          gte: new Date(new Date().setDate(1))
+        }
+      }
+    })
+    console.info(JSON.stringify(hours, null, 2))
 
     return response;
   }
