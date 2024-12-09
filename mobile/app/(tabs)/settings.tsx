@@ -37,8 +37,8 @@ export default function UserProfileScreen() {
           <ThemedText style={styles.infoLabel}>Matrícula:</ThemedText>
           <ThemedText style={styles.infoValue}>{user!.registration}</ThemedText>
 
-          <ThemedText style={styles.infoLabel}>Horas Acumuladas:</ThemedText>
-          <ThemedText style={styles.infoValue}>{user!.thisMonthHours ?? 0} h</ThemedText>
+          <ThemedText style={styles.infoLabel}>Horas acumuladas esse mês:</ThemedText>
+          <ThemedText style={styles.infoValue}>{user!.totalHours.toFixed(1)} h</ThemedText>
         </View>
 
         <View style={styles.section}>

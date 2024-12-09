@@ -17,7 +17,6 @@ export default function HomeScreen() {
   const { user, fetchMe } = useAuth()
 
   const [activityDetails, setActivityDetails] = useState("");
-  const [donePercentage, setDonePercentage] = useState(15);
 
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [showFinishActivityModal, setShowFinishActivityModal] = useState(false)
@@ -175,7 +174,7 @@ export default function HomeScreen() {
         <AnimatedCircularProgress
           size={Platform.OS === "android" ? 200 : 250}
           width={Platform.OS === "android" ? 25 : 35}
-          fill={donePercentage}
+          fill={user!.percentage}
           tintColor={Colors.light.primary}
           backgroundColor={Colors.light.gray}
           rotation={0}
@@ -184,7 +183,7 @@ export default function HomeScreen() {
             () => (
               <View style={styles.doneTextWrapper}>
                 <Text style={styles.doneTextContent}>
-                  8/20h
+                  {user!.totalHours.toFixed(1)}/20h
                 </Text>
                 <Text style={styles.doneTextContent}>
                   Mensais
@@ -228,6 +227,7 @@ export default function HomeScreen() {
             )
           }
         </Pressable>
+
         <Modal
           visible={showFinishActivityModal}
           transparent
@@ -236,11 +236,29 @@ export default function HomeScreen() {
         >
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Detalhes da atividade</Text>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Finalizar Atividade</Text>
+                <Pressable
+                  style={styles.closeButton}
+                  onPress={() => setShowFinishActivityModal(false)}
+                >
+                  <Ionicons name="close" size={24} color={Colors.light.gray} />
+                </Pressable>
+              </View>
 
               <View style={styles.timeInfo}>
-                <Text>Início: {new Date(currentActivity?.initLog?.timestamp || '').toLocaleTimeString()}</Text>
-                <Text>Fim: {finishTime ? finishTime.toLocaleTimeString() : ''}</Text>
+                <View style={styles.timeInfoRow}>
+                  <Text style={styles.timeLabel}>Início</Text>
+                  <Text style={styles.timeValue}>
+                    {new Date(currentActivity?.initLog?.timestamp || '').toLocaleTimeString()}
+                  </Text>
+                </View>
+                <View style={styles.timeInfoRow}>
+                  <Text style={styles.timeLabel}>Fim</Text>
+                  <Text style={styles.timeValue}>
+                    {finishTime ? finishTime.toLocaleTimeString() : ''}
+                  </Text>
+                </View>
               </View>
 
               <Text style={styles.inputLabel}>Descrição da atividade</Text>
@@ -250,23 +268,37 @@ export default function HomeScreen() {
                 value={activityDetails}
                 onChangeText={setActivityDetails}
                 multiline
+                placeholderTextColor={Colors.light.gray}
               />
 
               <Pressable
-                style={styles.submitButton}
+                style={[
+                  styles.submitButton,
+                  finishActivityMutation.isPending && { opacity: 0.7 }
+                ]}
                 onPress={handleFinishActivity}
                 disabled={finishActivityMutation.isPending}
               >
                 <View style={styles.submitButtonContent}>
-                  <Text style={styles.submitButtonText}>Finalizar</Text>
-                  {finishActivityMutation.isPending && (
-                    <ActivityIndicator size="small" color="white" style={styles.submitButtonLoader} />
+                  {finishActivityMutation.isPending ? (
+                    <ActivityIndicator color="white" style={{ marginRight: 8 }} />
+                  ) : (
+                    <Ionicons
+                      name="checkmark-circle-outline"
+                      size={20}
+                      color="white"
+                      style={{ marginRight: 8 }}
+                    />
                   )}
+                  <Text style={styles.submitButtonText}>
+                    {finishActivityMutation.isPending ? 'Finalizando...' : 'Finalizar Atividade'}
+                  </Text>
                 </View>
               </Pressable>
             </View>
           </View>
         </Modal>
+
 
         {currentActivity && currentActivity.initLog.projectId !== selectedProject && (
           <Text style={styles.warningText}>
@@ -289,6 +321,18 @@ export default function HomeScreen() {
 }
 
 function HourRegisterComponent({ register }: { register: any }) {
+  const getStatus = () => {
+    if (register.approvedBy) return "Aprovado";
+    if (register.deniedBy) return "Negado";
+    return "Pendente";
+  };
+
+  const getStatusColor = () => {
+    if (register.approvedBy) return "green";
+    if (register.deniedBy) return "red";
+    return "black";
+  };
+
   const styles = StyleSheet.create({
     hoursRegisterWrapper: {
       flexDirection: "row",
@@ -302,18 +346,24 @@ function HourRegisterComponent({ register }: { register: any }) {
     hoursRegisterText: {
       textAlign: "center",
       textOverflow: "ellipsis",
+      fontWeight: "500"
     },
     hoursRegisterTextWithBorder: {
       textAlign: "center",
       textOverflow: "ellipsis",
       borderEndWidth: 1,
-      paddingInline: 2
+      paddingInline: 2,
+      fontWeight: "500"
     },
+    statusText: {
+      color: getStatusColor(),
+      fontWeight: "500"
+    }
   })
 
   return (
     <View style={styles.hoursRegisterWrapper}>
-      <Text style={{ ...styles.hoursRegisterTextWithBorder, width: "25%" }}>
+      <Text style={{ ...styles.hoursRegisterTextWithBorder, width: "30%" }}>
         {register.project.name}
       </Text>
 
@@ -321,8 +371,8 @@ function HourRegisterComponent({ register }: { register: any }) {
         {new Date(register.init).toLocaleDateString()}
       </Text>
 
-      <Text style={{ ...styles.hoursRegisterTextWithBorder, width: "35%" }}>
-        {register.responsible ?? "Sem responsavel"}
+      <Text style={{ ...styles.hoursRegisterTextWithBorder, width: "30%" }}>
+        <Text style={styles.statusText}>{getStatus()}</Text>
       </Text>
 
       <Text style={{ ...styles.hoursRegisterText, width: "15%" }}>
@@ -340,7 +390,6 @@ function HourRegisterComponent({ register }: { register: any }) {
     </View>
   )
 }
-
 
 const styles = StyleSheet.create({
   scrollViewContainer: {
@@ -414,10 +463,15 @@ const styles = StyleSheet.create({
   },
   lastsHistoryWrapper: {
     marginTop: Platform.OS === "android" ? 10 : 40,
-    padding: 10,
-    backgroundColor: Colors.light.gray,
-    borderRadius: 10,
     width: "90%",
+    backgroundColor: '#f9f9f9',
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   disabledButton: {
     opacity: 0.5
@@ -428,16 +482,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     paddingHorizontal: 5,
     alignItems: "center",
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  submitButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
   },
   successTitle: {
     fontSize: 18,
@@ -461,53 +505,6 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
   },
-  modalContent: {
-    backgroundColor: 'white',
-    padding: 20,
-    width: '100%',
-    height: '100%',
-    paddingTop: Platform.OS === 'ios' ? 60 : 20, // Add safe area padding for iOS
-    alignItems: 'center', // Center content horizontally
-  },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 30,
-    textAlign: 'center',
-    width: '100%',
-  },
-  timeInfo: {
-    width: '100%',
-    marginBottom: 30,
-    paddingHorizontal: 20,
-    alignItems: 'center', // Center time info
-  },
-  descriptionInput: {
-    width: '90%',
-    height: 150,
-    borderWidth: 1,
-    borderColor: Colors.light.gray,
-    borderRadius: 5,
-    padding: 15,
-    marginBottom: 30,
-    textAlignVertical: 'top',
-    alignSelf: 'center', // Center the input
-  },
-  submitButton: {
-    backgroundColor: Colors.light.primary,
-    padding: 15,
-    borderRadius: 5,
-    width: '90%',
-    alignItems: 'center',
-    position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 40 : 20, // Adjust bottom padding for iOS
-    alignSelf: 'center', // Center the button
-  },
-  submitButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   submitButtonLoader: {
     marginLeft: 8,
   },
@@ -517,24 +514,91 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  inputLabel: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 8,
-    alignSelf: 'flex-start',
-    marginLeft: '5%',
-  },
   historyScrollView: {
     flex: 1,
     width: '100%',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 20,
+    width: '90%',
+    maxHeight: '80%',
+    paddingTop: Platform.OS === 'ios' ? 40 : 20,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    width: '100%',
-    paddingHorizontal: 20,
     marginBottom: 20,
+    paddingHorizontal: 10,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: Colors.light.text,
+  },
+  timeInfo: {
+    backgroundColor: '#f5f5f5',
+    padding: 15,
+    borderRadius: 10,
+    width: '100%',
+    marginBottom: 20,
+  },
+  timeInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 5,
+  },
+  timeLabel: {
+    fontSize: 16,
+    color: Colors.light.tint,
+  },
+  timeValue: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: Colors.light.text,
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: Colors.light.text,
+    marginBottom: 8,
+  },
+  descriptionInput: {
+    width: '100%',
+    height: 120,
+    borderWidth: 1,
+    borderColor: '#e1e1e1',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 20,
+    textAlignVertical: 'top',
+    fontSize: 16,
+  },
+  submitButton: {
+    backgroundColor: Colors.light.primary,
+    padding: 16,
+    borderRadius: 10,
+    width: '100%',
+    marginTop: 'auto',
+  },
+  submitButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  submitButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
   },
   closeButton: {
     padding: 8,

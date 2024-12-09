@@ -6,6 +6,8 @@ import { CryptService } from '../crypt/crypt.service';
 import errors from '../../res/consts';
 import { UserProjectStatus, Role as UserRole } from "@prisma/client"
 
+const HOUR_IN_TIMESTAMP = 60 * 60 * 1000
+
 @Injectable()
 export class UserService {
   constructor(private prisma: PrismaService, private crypt: CryptService) { }
@@ -104,6 +106,9 @@ export class UserService {
             deniedBy: true,
             approvedBy: true,
             project: true
+          },
+          orderBy: {
+            init: 'desc'
           }
         }
       }
@@ -111,19 +116,24 @@ export class UserService {
 
     delete response.password
 
-    const hours = await this.prisma.timeLog.findMany({
+    const hoursRegisterThisMonth = await this.prisma.timeLog.findMany({
       where: {
         projectId: {
           in: response.UsersOnProjects.map(({ project }) => project.id)
         },
         init: {
           gte: new Date(new Date().setDate(1))
-        }
+        },
+        deniedById: null, 
       }
-    })
-    console.info(JSON.stringify(hours, null, 2))
+    });
 
-    return response;
+    const totalHours = hoursRegisterThisMonth.reduce((acc, register) => 
+      acc + ((register.end.getTime() - register.init.getTime()) / 1)
+    , 0) / HOUR_IN_TIMESTAMP
+    const percentage = totalHours / 20 * 100
+
+    return { ...response, totalHours, percentage };
   }
 
   async findByEmail(email: string) {

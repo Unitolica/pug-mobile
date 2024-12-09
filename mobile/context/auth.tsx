@@ -6,6 +6,8 @@ type User = {
   name: string
   email: string
   registration: string
+  percentage: number
+  totalHours: number
   thisMonthHours: number
   UserOnCourses: {
     course: {
