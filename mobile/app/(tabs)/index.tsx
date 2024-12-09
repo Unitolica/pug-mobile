@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { StyleSheet, View, ScrollView, Pressable, Text, TextInput, Platform, ActionSheetIOS, Alert, Modal, ActivityIndicator } from "react-native";
+import { StyleSheet, View, ScrollView, Pressable, StatusBar, Text, TextInput, Platform, ActionSheetIOS, Alert, Modal, ActivityIndicator } from "react-native";
 import { useMutation } from "@tanstack/react-query";
 import { api } from "@/services/api";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -12,9 +12,11 @@ import { datesToDurationString } from "@/utils/date";
 import { ActivityManager } from "@/database/activityManager";
 import { ProjectActivity } from "@/database/types";
 import { useAuth } from "@/context/auth";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function HomeScreen() {
   const { user, fetchMe } = useAuth()
+  const insets = useSafeAreaInsets();
 
   const [activityDetails, setActivityDetails] = useState("");
 
@@ -139,191 +141,208 @@ export default function HomeScreen() {
   }, []);
 
   return (
-    <ScrollView style={styles.scrollViewContainer} contentContainerStyle={styles.scrollViewContent}>
-      {Platform.OS === "ios" && (
-        <Pressable
-          onPress={openIOSPicker}
-        >
-          <View style={styles.projectSelectorWrapper}>
-            <Text style={styles.projectSelectorText}>{user?.UsersOnProjects.find(({ project }) => project.id === selectedProject)?.project.name} <Ionicons name="chevron-down" color={Colors.light.icon} /></Text>
-          </View>
-        </Pressable>
-      )}
-
-      {Platform.OS === "android" && (
-        <Picker
-          selectedValue={selectedProject}
-          onValueChange={(itemValue) => {
-            setSelectedProject(itemValue);
-          }}
-          dropdownIconColor={Colors.light.primary}
-          dropdownIconRippleColor={Colors.light.primary}
-          style={{
-            width: 150,
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          {user?.UsersOnProjects.map(({ project }) => (
-            <Picker.Item key={project.id} label={project.name} value={project.id} />
-          ))}
-        </Picker>
-      )}
-
-      <View style={styles.doneWrapper}>
-        <AnimatedCircularProgress
-          size={Platform.OS === "android" ? 200 : 250}
-          width={Platform.OS === "android" ? 25 : 35}
-          fill={user!.percentage}
-          tintColor={Colors.light.primary}
-          backgroundColor={Colors.light.gray}
-          rotation={0}
-        >
-          {
-            () => (
-              <View style={styles.doneTextWrapper}>
-                <Text style={styles.doneTextContent}>
-                  {user!.totalHours.toFixed(1)}/20h
-                </Text>
-                <Text style={styles.doneTextContent}>
-                  Mensais
-                </Text>
-                <Pressable
-                  onPress={() => {
-                    Alert.alert("Informações", "Você deve completar 20 horas mensais!")
-                  }}
-                  style={styles.doneTextWrapperInfo}
-                >
-                  <Ionicons size={20} name="information-circle" color={Colors.light.gray} />
-                </Pressable>
-              </View>
-            )
-          }
-        </AnimatedCircularProgress>
-      </View>
-
-      <View style={styles.addHoursWrapper}>
-        <Text style={styles.addHoursText}>
-          {currentActivity ? "Encerrar atividade" : "Iniciar atividade"}
-        </Text>
-        <Pressable onPress={() => handleActivity()} style={[
-          styles.addHoursButton,
-          currentActivity && currentActivity.initLog.projectId !== selectedProject ?
-            styles.disabledButton : {}
+    <>
+      <StatusBar hidden />
+      <ScrollView
+        contentContainerStyle={[
+          styles.scrollViewContent,
+          { paddingTop: insets.top + 20 }
         ]}
-          disabled={currentActivity && currentActivity?.initLog?.projectId !== selectedProject}
-        >
-          {
-            isLoading ? (
-              <ActivityIndicator size="small" color="white" />
-            ) : (
-              currentActivity
-                ? (
-                  <Ionicons name="checkmark" size={30} color="white" />
-                )
-                : (
-                  <Ionicons name="add" size={30} color="white" />
-                )
-            )
-          }
-        </Pressable>
+        bounces={true}
+        showsVerticalScrollIndicator={false}
+      >
+        {Platform.OS === "ios" && (
+          <Pressable
+            onPress={openIOSPicker}
+          >
+            <View style={styles.projectSelectorWrapper}>
+              <Text style={styles.projectSelectorText}>{user?.UsersOnProjects.find(({ project }) => project.id === selectedProject)?.project.name} <Ionicons name="chevron-down" color={Colors.light.icon} /></Text>
+            </View>
+          </Pressable>
+        )}
 
-        <Modal
-          visible={showFinishActivityModal}
-          transparent
-          animationType="slide"
-          onRequestClose={() => setShowFinishActivityModal(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Finalizar Atividade</Text>
+        {Platform.OS === "android" && (
+          <Picker
+            selectedValue={selectedProject}
+            onValueChange={(itemValue) => {
+              setSelectedProject(itemValue);
+            }}
+            dropdownIconColor={Colors.light.primary}
+            dropdownIconRippleColor={Colors.light.primary}
+            style={{
+              width: 150,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            {user?.UsersOnProjects.map(({ project }) => (
+              <Picker.Item key={project.id} label={project.name} value={project.id} />
+            ))}
+          </Picker>
+        )}
+
+        <View style={styles.doneWrapper}>
+          <AnimatedCircularProgress
+            size={Platform.OS === "android" ? 200 : 250}
+            width={Platform.OS === "android" ? 25 : 35}
+            fill={user!.percentage}
+            tintColor={Colors.light.primary}
+            backgroundColor={Colors.light.gray}
+            rotation={0}
+          >
+            {
+              () => (
+                <View style={styles.doneTextWrapper}>
+                  <Text style={styles.doneTextContent}>
+                    {user!.totalHours.toFixed(1)}/20h
+                  </Text>
+                  <Text style={styles.doneTextContent}>
+                    Mensais
+                  </Text>
+                  <Pressable
+                    onPress={() => {
+                      Alert.alert("Informações", "Você deve completar 20 horas mensais!")
+                    }}
+                    style={styles.doneTextWrapperInfo}
+                  >
+                    <Ionicons size={20} name="information-circle" color={Colors.light.gray} />
+                  </Pressable>
+                </View>
+              )
+            }
+          </AnimatedCircularProgress>
+        </View>
+
+        <View style={styles.addHoursWrapper}>
+          <Text style={styles.addHoursText}>
+            {currentActivity ? "Encerrar atividade" : "Iniciar atividade"}
+          </Text>
+          <Pressable onPress={() => handleActivity()} style={[
+            styles.addHoursButton,
+            currentActivity && currentActivity.initLog.projectId !== selectedProject ?
+              styles.disabledButton : {}
+          ]}
+            disabled={currentActivity && currentActivity?.initLog?.projectId !== selectedProject}
+          >
+            {
+              isLoading ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                currentActivity
+                  ? (
+                    <Ionicons name="checkmark" size={30} color="white" />
+                  )
+                  : (
+                    <Ionicons name="add" size={30} color="white" />
+                  )
+              )
+            }
+          </Pressable>
+
+          <Modal
+            visible={showFinishActivityModal}
+            transparent
+            animationType="slide"
+            onRequestClose={() => setShowFinishActivityModal(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>Finalizar Atividade</Text>
+                  <Pressable
+                    style={styles.closeButton}
+                    onPress={() => setShowFinishActivityModal(false)}
+                  >
+                    <Ionicons name="close" size={24} color={Colors.light.gray} />
+                  </Pressable>
+                </View>
+
+                <View style={styles.timeInfo}>
+                  <View style={styles.timeInfoRow}>
+                    <Text style={styles.timeLabel}>Início</Text>
+                    <Text style={styles.timeValue}>
+                      {new Date(currentActivity?.initLog?.timestamp || '').toLocaleTimeString()}
+                    </Text>
+                  </View>
+                  <View style={styles.timeInfoRow}>
+                    <Text style={styles.timeLabel}>Fim</Text>
+                    <Text style={styles.timeValue}>
+                      {finishTime ? finishTime.toLocaleTimeString() : ''}
+                    </Text>
+                  </View>
+                </View>
+
+                <Text style={styles.inputLabel}>Descrição da atividade</Text>
+                <TextInput
+                  style={styles.descriptionInput}
+                  placeholder="Descreva suas atividades..."
+                  value={activityDetails}
+                  onChangeText={setActivityDetails}
+                  multiline
+                  placeholderTextColor={Colors.light.gray}
+                />
+
                 <Pressable
-                  style={styles.closeButton}
-                  onPress={() => setShowFinishActivityModal(false)}
+                  style={[
+                    styles.submitButton,
+                    finishActivityMutation.isPending && { opacity: 0.7 }
+                  ]}
+                  onPress={handleFinishActivity}
+                  disabled={finishActivityMutation.isPending}
                 >
-                  <Ionicons name="close" size={24} color={Colors.light.gray} />
+                  <View style={styles.submitButtonContent}>
+                    {finishActivityMutation.isPending ? (
+                      <ActivityIndicator color="white" style={{ marginRight: 8 }} />
+                    ) : (
+                      <Ionicons
+                        name="checkmark-circle-outline"
+                        size={20}
+                        color="white"
+                        style={{ marginRight: 8 }}
+                      />
+                    )}
+                    <Text style={styles.submitButtonText}>
+                      {finishActivityMutation.isPending ? 'Finalizando...' : 'Finalizar Atividade'}
+                    </Text>
+                  </View>
                 </Pressable>
               </View>
-
-              <View style={styles.timeInfo}>
-                <View style={styles.timeInfoRow}>
-                  <Text style={styles.timeLabel}>Início</Text>
-                  <Text style={styles.timeValue}>
-                    {new Date(currentActivity?.initLog?.timestamp || '').toLocaleTimeString()}
-                  </Text>
-                </View>
-                <View style={styles.timeInfoRow}>
-                  <Text style={styles.timeLabel}>Fim</Text>
-                  <Text style={styles.timeValue}>
-                    {finishTime ? finishTime.toLocaleTimeString() : ''}
-                  </Text>
-                </View>
-              </View>
-
-              <Text style={styles.inputLabel}>Descrição da atividade</Text>
-              <TextInput
-                style={styles.descriptionInput}
-                placeholder="Descreva suas atividades..."
-                value={activityDetails}
-                onChangeText={setActivityDetails}
-                multiline
-                placeholderTextColor={Colors.light.gray}
-              />
-
-              <Pressable
-                style={[
-                  styles.submitButton,
-                  finishActivityMutation.isPending && { opacity: 0.7 }
-                ]}
-                onPress={handleFinishActivity}
-                disabled={finishActivityMutation.isPending}
-              >
-                <View style={styles.submitButtonContent}>
-                  {finishActivityMutation.isPending ? (
-                    <ActivityIndicator color="white" style={{ marginRight: 8 }} />
-                  ) : (
-                    <Ionicons
-                      name="checkmark-circle-outline"
-                      size={20}
-                      color="white"
-                      style={{ marginRight: 8 }}
-                    />
-                  )}
-                  <Text style={styles.submitButtonText}>
-                    {finishActivityMutation.isPending ? 'Finalizando...' : 'Finalizar Atividade'}
-                  </Text>
-                </View>
-              </Pressable>
             </View>
+          </Modal>
+
+
+          <View style={{
+            minHeight: 20
+          }}>
+            {currentActivity && currentActivity.initLog.projectId !== selectedProject && (
+              <Text style={styles.warningText}>
+                Você tem uma atividade em andamento em outro projeto
+              </Text>
+            )}
           </View>
-        </Modal>
-
-
-        {currentActivity && currentActivity.initLog.projectId !== selectedProject && (
-          <Text style={styles.warningText}>
-            Você tem uma atividade em andamento em outro projeto
-          </Text>
-        )}
-      </View>
-
-      {user!.requestedTimeLogs.length !== 0 && (
-        <View style={styles.lastsHistoryWrapper}>
-          {
-            user!.requestedTimeLogs.map(register => (
-              <HourRegisterComponent key={`${register.id}-${register.end}`} register={register} />
-            ))
-          }
         </View>
-      )}
-    </ScrollView>
+
+        {user!.requestedTimeLogs.length !== 0 && (
+          <View style={styles.lastsHistoryWrapper}>
+            <Text style={styles.historyTitle}>
+              Histórico de atividades
+            </Text>
+            {
+              user!.requestedTimeLogs.map(register => (
+                <HourRegisterComponent key={`${register.id}-${register.end}`} register={register} />
+              ))
+            }
+          </View>
+        )}
+      </ScrollView>
+    </>
   );
 }
 
 function HourRegisterComponent({ register }: { register: any }) {
   const getStatus = () => {
-    if (register.approvedBy) return "Aprovado";
-    if (register.deniedBy) return "Negado";
+    if (register.approvedBy) return "Aprovada";
+    if (register.deniedBy) return "Recusada";
     return "Pendente";
   };
 
@@ -336,69 +355,79 @@ function HourRegisterComponent({ register }: { register: any }) {
   const styles = StyleSheet.create({
     hoursRegisterWrapper: {
       flexDirection: "row",
-      justifyContent: "space-around",
+      justifyContent: "space-between",
       alignItems: "center",
-      padding: 10,
-      borderBottomWidth: 1,
-      borderBottomColor: "black",
-      textOverflow: "ellipsis",
+      padding: 12,
+      backgroundColor: 'white',
+      marginBottom: 8,
+      borderRadius: 8,
+      shadowColor: "#000",
+      shadowOffset: {
+        width: 0,
+        height: 1,
+      },
+      shadowOpacity: 0.1,
+      shadowRadius: 2,
+      elevation: 2,
     },
     hoursRegisterText: {
-      textAlign: "center",
-      textOverflow: "ellipsis",
+      fontSize: 13,
+      color: Colors.light.text,
       fontWeight: "500"
     },
-    hoursRegisterTextWithBorder: {
+    projectName: {
+      width: "30%",
+      fontSize: 13,
+      fontWeight: "600",
+      color: Colors.light.text,
+    },
+    date: {
+      width: "30%",
+      fontSize: 13,
+      color: Colors.light.text,
       textAlign: "center",
-      textOverflow: "ellipsis",
-      borderEndWidth: 1,
-      paddingInline: 2,
-      fontWeight: "500"
+    },
+    status: {
+      textAlign: "center",
+      width: "25%",
+    },
+    duration: {
+      width: "15%",
+      fontSize: 13,
+      textAlign: "right",
+      color: Colors.light.tint,
     },
     statusText: {
-      color: getStatusColor(),
-      fontWeight: "500"
+      fontWeight: "600",
+      fontSize: 13,
     }
-  })
+  });
 
   return (
     <View style={styles.hoursRegisterWrapper}>
-      <Text style={{ ...styles.hoursRegisterTextWithBorder, width: "30%" }}>
+      <Text style={styles.projectName} numberOfLines={1}>
         {register.project.name}
       </Text>
 
-      <Text style={{ ...styles.hoursRegisterTextWithBorder, width: "25%" }}>
-        {new Date(register.init).toLocaleDateString()}
+      <Text style={styles.date}>
+        {new Date(register.end).toLocaleDateString()}
       </Text>
 
-      <Text style={{ ...styles.hoursRegisterTextWithBorder, width: "30%" }}>
-        <Text style={styles.statusText}>{getStatus()}</Text>
+      <Text style={styles.status}>
+        <Text style={[styles.statusText, { color: getStatusColor() }]}>
+          {getStatus()}
+        </Text>
       </Text>
 
-      <Text style={{ ...styles.hoursRegisterText, width: "15%" }}>
-        {
-          register.end ? (
-            datesToDurationString(
-              new Date(register.end),
-              new Date(register.init)
-            )
-          ) : (
-            "-"
-          )
-        }
+      <Text style={styles.duration}>
+        {register.end ? datesToDurationString(new Date(register.end), new Date(register.init)) : "-"}
       </Text>
     </View>
-  )
+  );
+
 }
 
 const styles = StyleSheet.create({
-  scrollViewContainer: {
-    paddingTop: Platform.OS === "android" ? 30 : 50,
-  },
-  scrollViewContent: {
-    flex: 1,
-    alignItems: "center"
-  },
   headerContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -413,7 +442,6 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     width: "100%",
-    maxHeight: "90%",
     paddingHorizontal: 16,
   },
   projectSelectorWrapper: {
@@ -460,18 +488,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.primary,
     padding: 8,
     borderRadius: 50,
-  },
-  lastsHistoryWrapper: {
-    marginTop: Platform.OS === "android" ? 10 : 40,
-    width: "90%",
-    backgroundColor: '#f9f9f9',
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
   },
   disabledButton: {
     opacity: 0.5
@@ -602,5 +618,28 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     padding: 8,
+  },
+  scrollViewContent: {
+    alignItems: "center",
+    paddingBottom: 40
+  },
+  lastsHistoryWrapper: {
+    marginTop: Platform.OS === "android" ? 20 : 40,
+    width: "90%",
+    backgroundColor: '#f9f9f9',
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  historyTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.light.text,
+    marginBottom: 12,
+    textAlign: "center",
   },
 });

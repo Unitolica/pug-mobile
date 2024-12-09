@@ -53,7 +53,7 @@ export default function DashboardHome() {
       timeLogId: string
       status: "APPROVED" | "REJECTED"
     }) => {
-      await api.patch(`project//activity/${timeLogId}/review`, { status })
+      await api.patch(`project/activity/${timeLogId}/review`, { status })
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pending-time-logs"] })

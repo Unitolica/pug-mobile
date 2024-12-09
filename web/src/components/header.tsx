@@ -6,54 +6,38 @@ export function Header() {
   const { logout } = useAuth()
 
   return (
-    <header className="flex bg-primary justify-between items-center w-full bg-zinc-200 border-b border-b-black py-4 px-3">
+    <header className="sticky top-0 z-50 flex items-center justify-between w-full px-6 py-4 bg-white border-b shadow-sm">
       <NavLink
         to="/"
         className={({ isActive }) =>
-          isActive ? "text-lg font-bold underline" : "text-lg"
+          `text-xl font-medium transition-colors ${isActive ? 'text-primary font-bold' : 'text-gray-700 hover:text-gray-900'}`
         }
       >
         Inicio
       </NavLink>
 
-      <nav className="flex gap-2 md:gap-4 text-md items-center">
-        <NavLink
-          to="/projetos"
+      <nav className="flex items-center space-x-6">
+        {[
+          { to: '/projetos', label: 'Projetos' },
+          { to: '/estudantes', label: 'Estudantes' },
+          { to: '/cursos', label: 'Cursos' },
+          { to: '/universidades', label: 'Universidades' },
+        ].map(({ to, label }) => (
+          <NavLink
+            key={to}
+            to={to}
           className={({ isActive }) =>
-            isActive ? "font-bold underline" : ""
+              `font-medium transition-colors ${isActive ? 'text-primary font-bold' : 'text-gray-600 hover:text-gray-900'}`
           }
         >
-          Projetos
+            {label}
         </NavLink>
-
-        <NavLink
-          to="/estudantes"
-          className={({ isActive }) =>
-            isActive ? "font-bold underline" : ""
-          }
+        ))}
+        <Button 
+          variant="destructive" 
+          onClick={logout}
+          className="ml-2"
         >
-          Estudantes
-        </NavLink>
-
-        <NavLink
-          to="/cursos"
-          className={({ isActive }) =>
-            isActive ? "font-bold underline" : ""
-          }
-        >
-          Cursos
-        </NavLink>
-
-        <NavLink
-          to="/universidades"
-          className={({ isActive }) =>
-            isActive ? "font-bold underline" : ""
-          }
-        >
-          Universidades
-        </NavLink>
-
-        <Button variant="destructive" onClick={logout}>
           Sair
         </Button>
       </nav>

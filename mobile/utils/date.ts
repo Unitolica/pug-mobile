@@ -20,10 +20,10 @@ export function datesToDurationString (
   const secondsString = duration.seconds ? `${duration.seconds}s` : null
 
   if (hoursString)
-    return `${hoursString} ${minutesString}`
+    return `${hoursString} ${minutesString ?? ""}`
 
   if (minutesString)
-    return `${minutesString} ${secondsString}`
+    return `${minutesString} ${secondsString ?? ""}`
 
   return secondsString
 }

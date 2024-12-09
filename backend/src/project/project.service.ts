@@ -223,48 +223,27 @@ export class ProjectService {
   }
 
   async findOne(id: string, user: any) {
-    if (user.role != Role.ADMIN && !user.projects.some((project) => project.id == response.id)) {
-      throw new UnauthorizedException();
-    }
-
-    const response = await this.prisma.project.findUnique({
+    return this.prisma.project.findUnique({
       where: {
-        id,
+        id
       },
-    });
-
-    if (!response) {
-      throw { statusCode: 404, message: "Not Found" }
-    }
-
-    if (user.role == Role.STUDENT) {
-      const users = await this.prisma.usersOnProjects.findMany({
-        where: {
-          projectId: id
+      include: {
+        CoursesOnProjects: {
+          include: {
+            course: {
+              include: {
+                university: true
+              }
+            }
+          }
         },
-        select: {
-          user: true
-        }
-      });
-
-      for (user in users) {
-        const actualUser = await this.prisma.user.findUnique({
-          where: {
-            id: user.id
+        UsersOnProjects: {
+          include: { 
+            user: true
           }
-        });
-
-        if (actualUser.id) {
-          if (!response[actualUser.role]) {
-            response[actualUser.role] = [];
-          }
-
-          response[actualUser.role].push(actualUser.id);
         }
       }
-    }
-
-    return response;
+    });
   }
 
   async updateMine(id: string, updateProjectDto: UpdateProjectDto, user: any) {
