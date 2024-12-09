@@ -45,7 +45,7 @@ const CreateUniversitySchema = z.object({
   internalobs: z.string().optional(),
 })
 
-export type University = z.infer<typeof CreateUniversitySchema>
+export type University = z.infer<typeof CreateUniversitySchema> & { id?: string }
 
 async function fetchUniversities(): Promise<University[]> {
   const { data } = await api.get("/university")
@@ -56,9 +56,21 @@ async function createUniversityAPI(formData: University): Promise<University> {
   await api.post("/university", formData);
   return formData
 }
+async function deleteUniversityAPI(id: string): Promise<void> {
+  await api.delete(`/university/${id}`);
+}
+
+async function updateUniversityAPI(formData: University): Promise<University> {
+  await api.put(`/university/${formData.identifier}`, formData);
+  return formData;
+}
 
 export default function UniversitiesHomePage() {
   const queryClient = useQueryClient()
+
+  const [drawerOpen, setDialogOpen] = useState(false)
+  const [selectedUniversity, setSelectedUniversity] = useState<University | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const { data: universities, isPending: isUniversitiesFetchPending, isError: isUniversitiesFetchError, error } = useQuery<University[]>({
     queryKey: ["universities"],
@@ -75,8 +87,6 @@ export default function UniversitiesHomePage() {
       internalobs: ""
     }
   })
-
-  const [drawerOpen, setDialogOpen] = useState(false)
 
   const { mutate, isPending: isSubmitLoading } = useMutation({
     mutationFn: createUniversityAPI,
@@ -101,34 +111,98 @@ export default function UniversitiesHomePage() {
     }
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: deleteUniversityAPI,
+    onSuccess: (_, deletedId) => {
+      toast({
+        itemID: "delete-university",
+        variant: "success",
+        title: "Sucesso",
+        description: "Universidade removida com sucesso!",
+      })
+      queryClient.setQueryData(["universities"], (current: University[]) =>
+        current.filter(u => u.identifier !== deletedId)
+      )
+      setIsDeleteModalOpen(false)
+    },
+    onError: (err) => {
+      const responseErrorMessage = err.response?.data?.message
+      console.error("error while deleting university", err)
+      toast({
+        itemID: "delete-university",
+        variant: "destructive",
+        title: "Erro",
+        description: responseErrorMessage ?? "Ocorreu um erro ao tentar remover a universidade. Tente novamente.",
+      })
+    }
+  });
+  const updateMutation = useMutation({
+    mutationFn: updateUniversityAPI,
+    onSuccess: (updatedUniversity) => {
+      toast({
+        itemID: "update-university",
+        variant: "success",
+        title: "Sucesso",
+        description: "Universidade atualizada com sucesso!",
+      })
+      queryClient.setQueryData(["universities"], (current: University[]) =>
+        current.map(u => u.identifier === updatedUniversity.identifier ? updatedUniversity : u)
+      )
+      setSelectedUniversity(null)
+    },
+    onError: (err) => {
+      console.error("error while updating university", err)
+      toast({
+        itemID: "update-university",
+        variant: "destructive",
+        title: "Erro",
+        description: "Ocorreu um erro ao tentar atualizar a universidade. Tente novamente.",
+      })
+    }
+  });
+
+
   function toggleDialog(value: boolean) {
-    if (!value) form.reset()
+    if (!value) {
+      form.reset()
+      setSelectedUniversity(null)
+    }
     setDialogOpen(value)
   }
 
   const onSubmit = (formData: University) => {
-    toast({
-      itemID: "create-university",
-      title: "Usando os seguintes valores: ",
-      description: (
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(formData, null, 2)}</code>
-        </pre>
-      ),
-    })
-
-    mutate(formData)
+    if (selectedUniversity) {
+      updateMutation.mutate(formData)
+    } else {
+      mutate(formData)
+    }
   }
+  const handleEdit = (university: University) => {
+    setSelectedUniversity(university);
+    form.reset(university);
+  };
+
+  const handleDelete = (university: University) => {
+    setSelectedUniversity(university);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (selectedUniversity) {
+      deleteMutation.mutate(selectedUniversity.id!);
+    }
+  };
+
 
   return (
-    <main className="p-5">
+    <main className="p-5 md:w-3/4 md:mx-auto">
       <header className="flex justify-between items-center">
         <h1 className="font-bold text-lg">Universidades</h1>
 
         <Dialog open={drawerOpen} onOpenChange={toggleDialog}>
           <DialogTrigger>
             <Button>
-              Registrar uma universidade
+              Cadastrar
             </Button>
           </DialogTrigger>
 
@@ -242,10 +316,68 @@ export default function UniversitiesHomePage() {
           <Accordion type="single" collapsible>
             {
               universities!.map((u) => (
-                <AccordionItem value={`university-${u.id}`} key={`university-${u.id}`}>
-                  <AccordionTrigger>{u.name}</AccordionTrigger>
+                <AccordionItem value={`university-${u.id}`} key={`university-${u.id}`} className="last:border-b-0 backdrop-blur-sm bg-zinc-100 p-2 border rounded-sm mt-2">
+                  <AccordionTrigger>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{u.name}</span>
+                    </div>
+                  </AccordionTrigger>
                   <AccordionContent>
-                    <pre>{JSON.stringify(u, null, 2)}</pre>
+                    <div className="space-y-4 p-4">
+                      {u.description && (
+                        <div>
+                          <h3 className="mb-1 font-bold">Descrição</h3>
+                          <p className="text-sm text-muted-foreground">{u.description}</p>
+                        </div>
+                      )}
+
+                      {u.internalobs && (
+                        <div>
+                          <h3 className="mb-1 font-bold">Observações Internas</h3>
+                          <p className="text-sm text-muted-foreground">{u.internalobs}</p>
+                        </div>
+                      )}
+
+                      <div className="flex gap-2 mt-4">
+                        <Button variant="outline" size="sm" onClick={() => handleEdit(u)}>
+                          Editar
+                        </Button>
+                        <Button variant="destructive" size="sm" onClick={() => handleDelete(u)}>
+                          Remover
+                        </Button>
+
+
+                        <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+                          <DialogContent>
+                            <DialogTitle>
+                              {selectedUniversity ? "Editar universidade" : "Registro de uma nova universidade"}
+                            </DialogTitle>
+                            <DialogHeader>
+                              <DialogTitle>Confirmar Remoção</DialogTitle>
+                              <DialogDescription>
+                                Tem certeza que deseja remover a universidade "{selectedUniversity?.name}"?
+                                Esta ação não pode ser desfeita.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <DialogFooter>
+                              <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>
+                                Cancelar
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                onClick={confirmDelete}
+                                disabled={deleteMutation.isPending}
+                              >
+                                {deleteMutation.isPending && <Loader2Icon className="animate-spin mr-2" />}
+                                Confirmar
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+
+                      </div>
+
+                    </div>
                   </AccordionContent>
                 </AccordionItem>
               ))

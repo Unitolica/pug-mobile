@@ -59,6 +59,34 @@ export class UserService {
           role: UserRole[role?.toUpperCase()]
         } : {})
       },
+      include: {
+        UserOnCourses: {
+          include: {
+            course: {
+              include: {
+                university: true
+              }
+            }
+          }
+        },
+        UsersOnProjects: {
+          include: {
+            project: {
+              include: {
+                CoursesOnProjects: {
+                  include: {
+                    course: {
+                      include: {
+                        university: true
+                      } 
+                    }
+                  }
+                },
+              }
+            }, 
+          }
+        }
+      }
     });
     return response.map(user => {
       delete user.password

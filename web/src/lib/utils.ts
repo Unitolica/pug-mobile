@@ -41,5 +41,3 @@ export function periodToDateRange(period: { year: number, month: number }) {
 
   return { startDate, endDate }
 }
-
-

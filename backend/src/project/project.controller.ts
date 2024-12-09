@@ -53,6 +53,18 @@ export class ProjectController {
     return this.projectService.registerActivity(registerActivityDto, req.user);
   }
 
+  @Get('/activity/pending')
+  @Roles(Role.ADMIN, Role.PROFESSOR)
+  listPendingActivities() {
+    return this.projectService.listPendingActivities()
+  }
+
+  @Patch('/activity/:id/review')
+  @Roles(Role.ADMIN, Role.PROFESSOR)
+  reviewActivity(@Param('id') id: string, @Body() reviewActivityDto: { status: "APPROVED" | "REJECTED" }, @Request() req) {
+    return this.projectService.reviewActivity(id, reviewActivityDto, req.user);
+  }
+
   @Get('assigned')
   @Roles(Role.OWNER, Role.PROFESSOR, Role.STUDENT)
   findAsigned(@Request() req) {

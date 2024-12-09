@@ -287,4 +287,43 @@ export class ProjectService {
 
     return { message: "deleted" };
   }
+
+  async listPendingActivities() {
+    const response = await this.prisma.timeLog.findMany({
+      where: {
+        approvedById: null,
+        deniedById: null,
+      },
+      include: {
+        project: true, 
+        requestedBy: true
+      }
+    })
+
+    return response
+  }
+
+  async reviewActivity(id: string, reviewActivityDto: { status: "APPROVED" | "REJECTED" }, user: any) {
+    try {
+      await this.prisma.timeLog.update({
+        where: {
+          id
+        },
+        data: {
+          ...(
+            reviewActivityDto.status === "APPROVED" ? {
+              approvedById: user.id
+            } : {
+              deniedById: user.id
+            } 
+          )
+        }
+      })
+
+      return { message: "ok" }
+    } catch (error) {
+      console.error("error while reviewing activity", error)
+      throw { statusCode: 500, message: 'Internal Server Error' }
+    }
+  } 
 }

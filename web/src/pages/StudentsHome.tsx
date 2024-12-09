@@ -71,6 +71,7 @@ export default function StudentsHomePage() {
       const { data } = await api.get("/user?role=student")
       return data
     },
+    initialData: []
   })
 
   const { mutate: createUser, isPending } = useMutation({
@@ -94,7 +95,7 @@ export default function StudentsHomePage() {
   })
 
   return (
-    <section className="p-5">
+    <section className="p-5 md:w-3/4 md:mx-auto">
       <header className="flex items-center justify-between">
         <h2 className="text-md py-3 font-bold">Estudantes</h2>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -208,7 +209,7 @@ export default function StudentsHomePage() {
                     <Button variant="outline">Cancelar</Button>
                   </DialogClose>
                   <Button type="submit" disabled={isPending}>
-                    {isPending && <Loader2Icon className="mr-1 animate-spin" /> }
+                    {isPending && <Loader2Icon className="mr-1 animate-spin" />}
                     <span>Cadastrar</span>
                   </Button>
                 </DialogFooter>
@@ -219,28 +220,74 @@ export default function StudentsHomePage() {
       </header>
 
       <main className="mt-5">
-        {
-          isLoading
-          ? (
-            <div className="flex justify-center">
-              <Loader2Icon className="animate-spin h-5 w-5" />
-            </div>
-          )
-          : (
-            <Accordion type="single" collapsible>
-              {
-                students!.map((s) => (
-                  <AccordionItem value={`student-${s.name}`} key={`student-${s.name}`}>
-                    <AccordionTrigger>{s.name}</AccordionTrigger>
-                    <AccordionContent>
-                      <pre>{JSON.stringify(s, null, 2)}</pre>
-                    </AccordionContent>
-                  </AccordionItem>
-                ))
-              }
-            </Accordion>
-          )
-        }
+        {isLoading ? (
+          <div className="flex justify-center">
+            <Loader2Icon className="animate-spin h-5 w-5" />
+          </div>
+        ) : (
+          <Accordion type="single" collapsible className="space-y-2">
+            {students!.map((student) => (
+              <AccordionItem
+                value={`student-${student.name}`}
+                key={`student-${student.name}`}
+                className="border rounded-lg px-4 bg-zinc-100"
+              >
+                <AccordionTrigger className="hover:no-underline">
+                  <div className="flex items-center gap-4">
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                      {student.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="text-left">
+                      <p className="font-medium">{student.name}</p>
+                      <p className="text-sm text-muted-foreground">{student.email}</p>
+                    </div>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="pt-4">
+                  <div className="grid gap-4 text-sm">
+                    <div className="flex justify-between">
+                      <div>
+                        <p className="font-medium text-muted-foreground">Matrícula</p>
+                        <p>{student.registration}</p>
+                      </div>
+                      <div>
+                        <Button variant="outline" onClick={() => console.info(student)}>Gerar relatório de horas</Button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="font-medium text-muted-foreground mb-2">Cursos</p>
+                      <div className="flex flex-wrap gap-2">
+                        {student.UserOnCourses.map(({ course }) => (
+                          <span
+                            key={course.id}
+                            className="px-2 py-1 bg-primary/10 rounded-md text-xs"
+                          >
+                            {course.name} - {course.university.name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="font-medium text-muted-foreground mb-2">Projetos</p>
+                      <div className="flex flex-wrap gap-2">
+                        {student.UsersOnProjects.map(({ project }) => (
+                          <p
+                            key={project.id}
+                            className="px-2 py-1 bg-primary/10 rounded-md text-xs"
+                          >
+                            {project.name}
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        )}
       </main>
     </section>
   )

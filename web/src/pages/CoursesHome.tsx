@@ -59,6 +59,9 @@ type Course = z.infer<typeof CreateCourseSchema>
 export default function CoursesHomePage() {
   const queryClient = useQueryClient()
 
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
   const form = useForm<z.infer<typeof CreateCourseSchema>>({
     resolver: zodResolver(CreateCourseSchema),
     defaultValues: {
@@ -68,6 +71,57 @@ export default function CoursesHomePage() {
       universities: []
     }
   })
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/courses/${id}`);
+    },
+    onSuccess: (_, deletedId) => {
+      toast({
+        itemID: "delete-course",
+        variant: "success",
+        title: "Sucesso",
+        description: "Curso removido com sucesso!",
+      })
+      queryClient.invalidateQueries({ queryKey: ["courses"] })
+      setIsDeleteModalOpen(false)
+    },
+    onError: (err) => {
+      console.error("error while deleting course", err)
+      toast({
+        itemID: "delete-course",
+        variant: "destructive",
+        title: "Erro",
+        description: "Ocorreu um erro ao tentar remover o curso. Tente novamente.",
+      })
+    }
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (formData: Course) => {
+      await api.put(`/courses/${formData.id}`, formData);
+    },
+    onSuccess: () => {
+      toast({
+        itemID: "update-course",
+        variant: "success",
+        title: "Sucesso",
+        description: "Curso atualizado com sucesso!",
+      })
+      queryClient.invalidateQueries({ queryKey: ["courses"] })
+      setSelectedCourse(null)
+      setDialogOpen(false)
+    },
+    onError: (err) => {
+      console.error("error while updating course", err)
+      toast({
+        itemID: "update-course",
+        variant: "destructive",
+        title: "Erro",
+        description: "Ocorreu um erro ao tentar atualizar o curso. Tente novamente.",
+      })
+    }
+  });
 
   const { data: courses, isLoading, isError, error } = useQuery<Course[]>({
     queryKey: ["courses"],
@@ -116,17 +170,34 @@ export default function CoursesHomePage() {
     setDialogOpen(value)
   }
 
+  const handleEdit = (course: Course) => {
+    setSelectedCourse(course);
+    form.reset(course);
+    setDialogOpen(true);
+  };
+
+  const handleDelete = (course: Course) => {
+    setSelectedCourse(course);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (selectedCourse) {
+      deleteMutation.mutate(selectedCourse.id!);
+    }
+  };
+
   const universities = queryClient.getQueryData(["universities"]) as University[]
 
   return (
-    <main className="p-5">
+    <main className="p-5 md:w-3/4 md:mx-auto">
       <header className="flex justify-between items-center">
         <h1>Cursos</h1>
 
         <Dialog open={drawerOpen} onOpenChange={toggleDialog}>
           <DialogTrigger>
             <Button>
-              Registrar novo curso
+              Cadastrar
             </Button>
           </DialogTrigger>
 
@@ -249,14 +320,50 @@ export default function CoursesHomePage() {
             : (
               <Accordion type="single" collapsible>
                 {!isLoading && courses!.map(c => (
-                    <AccordionItem value={c.id} key={c.id}>
-                      <AccordionTrigger>{c.name}</AccordionTrigger>
-                      <AccordionContent>
-                        <pre>
-                          {JSON.stringify(c, null, 2)}
-                        </pre>
-                      </AccordionContent>
-                </AccordionItem>
+                  <AccordionItem value={c.id} key={c.id} className="last:border-b-0 backdrop-blur-sm bg-zinc-100 p-2 border rounded-sm mt-2">
+                    <AccordionTrigger>{c.name} - {c.university.name}</AccordionTrigger>
+                    <AccordionContent>
+                      <div className="space-y-4 p-4">
+                        <div>
+                          <h3 className="mb-1 font-bold">Observações Internas</h3>
+                          <p className="text-sm text-muted-foreground">{c.internalobs}</p>
+                        </div>
+
+                        <div className="flex gap-2 mt-4">
+                          <Button variant="outline" size="sm" onClick={() => handleEdit(c)}>
+                            Editar
+                          </Button>
+                          <Button variant="destructive" size="sm" onClick={() => handleDelete(c)}>
+                            Remover
+                          </Button>
+                          <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Confirmar Remoção</DialogTitle>
+                                <DialogDescription>
+                                  Tem certeza que deseja remover o curso "{selectedCourse?.name}"?
+                                  Esta ação não pode ser desfeita.
+                                </DialogDescription>
+                              </DialogHeader>
+                              <DialogFooter>
+                                <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>
+                                  Cancelar
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  onClick={confirmDelete}
+                                  disabled={deleteMutation.isPending}
+                                >
+                                  {deleteMutation.isPending && <Loader2Icon className="animate-spin mr-2" />}
+                                  Confirmar
+                                </Button>
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
                 ))
                 }
               </Accordion>

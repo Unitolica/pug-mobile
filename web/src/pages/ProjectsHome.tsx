@@ -172,14 +172,14 @@ export default function ProjectsPage() {
   }
 
   return (
-    <section className="mt-10 p-5">
+    <section className="mt-10 p-5 md:w-3/4 md:mx-auto">
       <header className="flex flex-col items-center">
         <div className="flex justify-between items-center w-full">
           <h2 className="text-md py-3 font-bold">Projetos</h2>
 
           <Dialog open={createProjectDialogOpen} onOpenChange={setCreateDialogOpen}>
             <DialogTrigger>
-              <Button>Criar projeto</Button>
+              <Button>Cadastrar</Button>
             </DialogTrigger>
 
             <DialogContent>
@@ -378,58 +378,51 @@ function ProjectsTable({ data, isLoading }: { data?: Project[], isLoading: boole
 
   if (!data || data?.length <= 0) {
     return (
-      <div className="overflow-x-auto flex flex-col items-center justify-center p-20 min-w-full rounded border border-zinc-600">
-        <Inbox />
-        <p className="text-center">
+      <div className="overflow-x-auto flex flex-col items-center justify-center p-20 min-w-full rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-950/50">
+        <Inbox className="w-12 h-12 text-zinc-400" />
+        <p className="text-center mt-4 text-zinc-500 dark:text-zinc-400">
           Nenhum projeto cadastrado
         </p>
       </div>
     )
   }
+
   return (
-    <div className="overflow-x-auto rounded border border-zinc-600">
-      <Table className="min-w-full bg-white rounded">
-        <TableCaption className="p-4 mt-0">
-          Lista de projetos
-        </TableCaption>
-
+    <div className="overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-950/50">
+      <Table>
         <TableHeader>
-          <TableRow>
-            <TableHead className="px-2 py-1 w-1/3 bg-gray-100 text-center text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
-              <p>Nome</p>
-            </TableHead>
-
-            <TableHead className="px-2 py-1 w-1/4 bg-gray-100 text-center text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
-              <p>Horas</p>
-            </TableHead>
-
-            <TableHead className="px-2 py-1 w-1/4 bg-gray-100 text-center text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
-              <p>Status</p>
-            </TableHead>
-
-            <TableHead className="px-2 py-1 w-1/3 bg-gray-100 text-center text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
-              <p>Acoes</p>
-            </TableHead>
+          <TableRow className="hover:bg-transparent">
+            <TableHead className="w-[40%] font-semibold">Nome</TableHead>
+            <TableHead className="w-[20%] text-center font-semibold">Horas</TableHead>
+            <TableHead className="w-[20%] text-center font-semibold">Status</TableHead>
+            <TableHead className="w-[20%] text-center font-semibold">Ações</TableHead>
           </TableRow>
         </TableHeader>
 
         <TableBody>
           {data.map((item) => (
-            <TableRow key={item.id}>
-              <TableCell className="px-2 py-2 w-1/3 text-center whitespace-no-wrap border-b border-gray-200">
+            <TableRow 
+              key={item.id}
+              className="hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50 transition-colors"
+            >
+              <TableCell className="font-medium">
                 {item.name}
               </TableCell>
-
-              <TableCell className="px-2 py-2 w-1/4 text-center whitespace-no-wrap border-b border-gray-200">
-                {item.hours} h
+              <TableCell className="text-center">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                  {item.hours}h
+                </span>
               </TableCell>
-
-              <TableCell className="px-2 py-2 w-1/4 text-center whitespace-no-wrap border-b border-gray-200">
-                {"---"}
+              <TableCell className="text-center">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                  Ativo
+                </span>
               </TableCell>
-
-              <TableCell className="px-2 py-2 w-1/3 text-center whitespace-no-wrap border-b border-gray-200 underline">
-                <Link to={`/projetos/${item.id}`}>
+              <TableCell className="text-center">
+                <Link 
+                  to={`/projetos/${item.id}`}
+                  className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                >
                   Detalhar
                 </Link>
               </TableCell>
